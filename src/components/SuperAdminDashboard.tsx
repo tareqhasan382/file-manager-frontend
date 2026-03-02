@@ -5,7 +5,7 @@ const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhNWViZDVhOC01
 
 const headers = {
   "Content-Type": "application/json",
-  Authorization: `${token}`,
+  Authorization: token,   //  NOT Bearer
 };
 
 type Plan = "FREE" | "SILVER" | "GOLD" | "DIAMOND";
