@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-
+export const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
 const plans = [
   {
     name: "Free",

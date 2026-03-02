@@ -12,9 +12,9 @@ type Props = {
 const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   const navigate = useNavigate();
   //const { accessToken, user } = useSelector((state: RootState) => state.auth);
- let accessToken
+ let accessToken="asdsadasdasdasd"
  const user={
-    role:"admin"
+    role:"SUPER_ADMIN"
  }
   useEffect(() => {
     // Not logged in

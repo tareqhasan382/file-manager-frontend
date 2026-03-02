@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-
-const API = "http://localhost:8000/api/v1/admin";
+import { BASE_URL } from "../App";
+const API = `${BASE_URL}/api/v1/admin`;
 const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhNWViZDVhOC01ZDZiLTQ0N2MtYWM0Yi0zZmE5NTliNzMzODciLCJlbWFpbCI6InN1cGVyYWRtaW5AZmlsZXZhdWx0LmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsInRlbmFudElkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiaWF0IjoxNzcyNDkyNjU1LCJleHAiOjc4MjA0OTI2NTV9.4bA4mXPHo5ykLof2gBVFyutIS8BpnCjbk5VJm8D62Ow";//localStorage.getItem("token") || "";
 
 const headers = {
