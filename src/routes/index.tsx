@@ -33,7 +33,7 @@ const routes = createBrowserRouter([
     {
         path: "/files",
         element: (
-            <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER", "SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}>
                 <FileManager />
             </ProtectedRoute>
         ),
@@ -41,7 +41,7 @@ const routes = createBrowserRouter([
     {
         path: "/members",
         element: (
-            <ProtectedRoute allowedRoles={["OWNER", "SUPER_ADMIN"]}>
+            <ProtectedRoute allowedRoles={["OWNER"]}>
                 <MemberManager />
             </ProtectedRoute>
         ),

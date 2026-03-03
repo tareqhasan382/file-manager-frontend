@@ -22,21 +22,14 @@ export const authApi = baseApi.injectEndpoints({
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
           const { data } = await queryFulfilled;
-
-          const token = data?.data?.token;
-          //console.log("token------------>", token)
-          const userFromApi = data?.data?.user;
-          //console.log("userFromApi------------>", userFromApi)
-          // decode JWT (role, email, userId)
+          const token = data?.accessToken;
+          
           const decodedUser = jwtDecode(token);
-
           dispatch(
             userLoggedIn({
               accessToken: token,
               user: {
-                ...decodedUser,
-                _id: userFromApi._id,
-                name: userFromApi.name,
+                ...decodedUser
               },
             })
           );
