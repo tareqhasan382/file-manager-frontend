@@ -8,6 +8,8 @@ import Signup from "../pages/Signup";
 import Login from "../pages/Login";
 import FileManager from "../pages/FileManager";
 import MemberManager from "../pages/MemberManager";
+import Success from "../pages/Success";
+import Cancel from "../pages/Cancel";
 
 const routes = createBrowserRouter([
     // ── With Layout ──────────────────────────────────────
@@ -18,6 +20,8 @@ const routes = createBrowserRouter([
             { path: "/", element: <App /> },
             { path: "/login", element: <Login /> },
             { path: "/signup", element: <Signup /> },
+            { path: "/success", element: <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}><Success /></ProtectedRoute> },
+            { path: "/cancel", element: <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}><Cancel /></ProtectedRoute> },
             {
                 path: "/dashboard",
                 element: (
