@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
+import { store } from "../Redux/store";
 const API = `${BASE_URL}/api/v1/admin`;
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhNWViZDVhOC01ZDZiLTQ0N2MtYWM0Yi0zZmE5NTliNzMzODciLCJlbWFpbCI6InN1cGVyYWRtaW5AZmlsZXZhdWx0LmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsInRlbmFudElkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiaWF0IjoxNzcyNDkyNjU1LCJleHAiOjc4MjA0OTI2NTV9.4bA4mXPHo5ykLof2gBVFyutIS8BpnCjbk5VJm8D62Ow";//localStorage.getItem("token") || "";
-
 const headers = {
   "Content-Type": "application/json",
-  Authorization: token,   //  NOT Bearer
+  Authorization: store.getState().auth.accessToken,   //  NOT Bearer
 };
 
 type Plan = "FREE" | "SILVER" | "GOLD" | "DIAMOND";

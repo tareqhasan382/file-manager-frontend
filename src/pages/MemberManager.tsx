@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
 import { Link } from "react-router-dom";
+import { store } from "../Redux/store";
 
 const API = `${BASE_URL}/api/v1`;//"http://localhost:8000/api/v1";
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjYWViZmUxMi04N2RkLTRhOGQtODc5OC02ZmJhZjJhZjU4MzUiLCJlbWFpbCI6InRhcmVxNDEyMUBnbWFpbC5jb20iLCJyb2xlIjoiT1dORVIiLCJ0ZW5hbnRJZCI6ImIzOWU5MTQ4LWZjNWMtNDhlZS05MTZlLWJjMzkzY2I0ZjY1OSIsImlhdCI6MTc3MjUwMDY0NiwiZXhwIjo3ODIwNTAwNjQ2fQ.SUqPfVCl0V_opDEFx_VGM0hpuIkIowYdvflCe1b2QGg",
+  Authorization: store.getState().auth.accessToken,
 });
 
 type Role = "ADMIN" | "MEMBER";
