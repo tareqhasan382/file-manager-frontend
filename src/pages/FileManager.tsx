@@ -5,6 +5,8 @@ import { CiGrid41 } from "react-icons/ci";
 import { LuLayoutList } from "react-icons/lu";
 import { FaFolderPlus } from "react-icons/fa";
 import { FiUploadCloud } from "react-icons/fi";
+import type { RootState } from "../Redux/store";
+import { useSelector } from "react-redux";
 
 const API = `${BASE_URL}/api/v1`;
 const getHeaders = () => ({
@@ -81,6 +83,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 export default function FileManager() {
+  const auth = useSelector((state: RootState) => state.auth);
+  // console.log("auth----->",auth)
   const [folders, setFolders] = useState<Folder[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
@@ -140,13 +144,15 @@ export default function FileManager() {
 
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
+    // console.log("folderName---->",folderName)
+    // console.log("currentFolder?.id---->",currentFolder?.id)
     try {
       const r = await fetch(`${API}/folder`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
           name: folderName,
-          path: folderPath,
+          path: `/${folderName.toLowerCase()}`,
           parentId: currentFolder?.id || undefined,
         }),
       });
@@ -227,7 +233,8 @@ export default function FileManager() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#05050a]/95 backdrop-blur-sm border-b border-white/5 px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/">
+          <div className=" flex gap-5 items-center ">
+            <Link to="/">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-sm font-black">F</div>
             <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
@@ -235,6 +242,15 @@ export default function FileManager() {
             </span>
           </div>
           </Link>
+          {auth?.user?.role ==="OWNER" &&<Link to="/members">
+          <div className="flex items-center gap-3">
+            <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
+              Members
+            </span>
+          </div>
+          </Link> }
+          
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -472,7 +488,7 @@ export default function FileManager() {
                 className="w-full bg-white/5 border border-white/10 focus:border-violet-500/50 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-700 outline-none transition-colors"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="text-zinc-500 text-xs uppercase tracking-widest block mb-2">Path</label>
               <input
                 value={folderPath}
@@ -480,7 +496,7 @@ export default function FileManager() {
                 placeholder="/documents"
                 className="w-full bg-white/5 border border-white/10 focus:border-violet-500/50 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-700 outline-none transition-colors"
               />
-            </div>
+            </div> */}
             {currentFolder && (
               <p className="text-zinc-600 text-xs">Inside: <span className="text-violet-400">{currentFolder.name}</span></p>
             )}
