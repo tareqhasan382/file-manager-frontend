@@ -32,14 +32,15 @@ const Navbar = () => {
   ];
 
   const isLoggedIn = !!auth?.user;
+  // console.log("isLoggedIn------>",isLoggedIn)
+  // console.log("auth------>",auth?.user?.role)
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
           ? "bg-[#05050a]/95 backdrop-blur-xl border-b border-white/5 py-3"
           : "bg-[#05050a]/95 py-5"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
         {/* Logo */}
@@ -67,12 +68,17 @@ const Navbar = () => {
             <>
               {/* show user email */}
               <span className="text-zinc-500 text-xs truncate max-w-[140px]">{auth.user?.email}</span>
-              <Link
+              {auth?.user?.role === "SUPER_ADMIN" ? <Link
+                to="/dashboard"
+                className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+              >
+                Dashboard
+              </Link> : <Link
                 to="/files"
                 className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
               >
                 My Files
-              </Link>
+              </Link>}
               <button
                 onClick={handleLogout}
                 className="bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
