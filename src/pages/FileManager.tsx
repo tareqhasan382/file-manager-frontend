@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
 import { Link } from "react-router-dom";
+import { CiGrid41 } from "react-icons/ci";
+import { LuLayoutList } from "react-icons/lu";
+import { FaFolderPlus } from "react-icons/fa";
+import { FiUploadCloud } from "react-icons/fi";
 
 const API = `${BASE_URL}/api/v1`;
 const getHeaders = () => ({
@@ -237,14 +241,14 @@ export default function FileManager() {
               onClick={() => setModal("createFolder")}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-xs font-medium px-3 py-2 rounded-xl transition-all"
             >
-              <span>📁</span>
+              <span><FaFolderPlus size={24} color="#fcba03" /></span>
               <span className="hidden sm:block">New Folder</span>
             </button>
             <button
               onClick={() => setModal("uploadFile")}
               className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all"
             >
-              <span>↑</span>
+              <span><FiUploadCloud size={24} /></span>
               <span className="hidden sm:block">Upload File</span>
             </button>
           </div>
@@ -279,8 +283,8 @@ export default function FileManager() {
             className="bg-[#0d0d15] border border-white/8 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-700 outline-none focus:border-violet-500/40 transition-colors w-full max-w-xs"
           />
           <div className="flex items-center gap-1 bg-[#0d0d15] border border-white/8 rounded-xl p-1">
-            <button onClick={() => setView("grid")} className={`p-2 rounded-lg text-xs transition-colors ${view === "grid" ? "bg-violet-600 text-white" : "text-zinc-600 hover:text-zinc-300"}`}>⊞</button>
-            <button onClick={() => setView("list")} className={`p-2 rounded-lg text-xs transition-colors ${view === "list" ? "bg-violet-600 text-white" : "text-zinc-600 hover:text-zinc-300"}`}>≡</button>
+            <button onClick={() => setView("grid")} className={`px-2 py-1 rounded-lg text-2xl transition-colors ${view === "grid" ? "bg-violet-600 text-white" : "text-zinc-600 hover:text-zinc-300"}`}><CiGrid41 /></button>
+            <button onClick={() => setView("list")} className={`px-2 py-1 rounded-lg text-2xl transition-colors ${view === "list" ? "bg-violet-600 text-white" : "text-zinc-600 hover:text-zinc-300"}`}><LuLayoutList /></button>
           </div>
         </div>
 
