@@ -22,7 +22,7 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-[#05050a]/95 ${
         scrolled
           ? "bg-[#05050a]/95 backdrop-blur-xl border-b border-white/5 py-3"
           : "bg-transparent py-5"
@@ -80,7 +80,7 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden transition-all duration-300 overflow-hidden ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
+      <div className={`md:hidden transition-all duration-300 bg-[#05050a] overflow-hidden ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="px-4 pb-4 pt-2 border-t border-white/5 mt-3 space-y-1">
           {navLinks.map((l) => (
             <a

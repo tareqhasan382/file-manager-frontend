@@ -6,6 +6,7 @@ import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Signup from "../pages/Signup";
 import Login from "../pages/Login";
+import FileManager from "../pages/FileManager";
 
 const routes = createBrowserRouter([
     {
@@ -34,7 +35,7 @@ const routes = createBrowserRouter([
 
                 ),
             },
-             {
+            {
                 path: "/dashboard",
                 element: (
 
@@ -44,7 +45,15 @@ const routes = createBrowserRouter([
 
                 ),
             },
-            
+            {
+                path: "/files",
+                element: (
+                    <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER","SUPER_ADMIN"]}>
+                        <FileManager />
+                    </ProtectedRoute>
+                ),
+            },
+
             //  {
             //     path: "/jobs/:id",
             //     element: (
