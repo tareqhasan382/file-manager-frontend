@@ -98,7 +98,7 @@ export default function FileManager() {
 
   // Form states
   const [folderName, setFolderName] = useState("");
-  const [folderPath, setFolderPath] = useState("/");
+  // const [folderPath, setFolderPath] = useState("/");
   const [fileForm, setFileForm] = useState({ name: "", size: "", mimeType: "", url: "", publicId: "", path: "/" });
 
   const showToast = (msg: string, type: "success" | "error" = "success") => setToast({ msg, type });
