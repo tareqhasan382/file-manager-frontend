@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
-import { store } from "../Redux/store";
+import { store }from "../Redux/store";
 const API = `${BASE_URL}/api/v1/admin`;
 const headers = {
   "Content-Type": "application/json",
@@ -174,7 +174,6 @@ export default function SuperAdminDashboard() {
     { id: "tenants", label: "Tenants", icon: "⬡" },
     { id: "users", label: "Users", icon: "◎" },
   ] as const;
-
   return (
     <div className="min-h-screen bg-[#080809] text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
       <style>{`
