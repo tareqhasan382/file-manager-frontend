@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
 
 const API = `${BASE_URL}/api/v1`;
