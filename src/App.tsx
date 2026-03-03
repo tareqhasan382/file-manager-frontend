@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import type { RootState } from "./Redux/store";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 export const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
 const plans = [
   {
@@ -75,6 +78,42 @@ function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: num
 }
 
 function App() {
+  const navigate = useNavigate();
+  const auth = useSelector((state: RootState) => state.auth);
+  const [subscribing, setSubscribing] = useState<string | null>(null);
+
+  const handleSubscribe = async (plan: string) => {
+    if (!auth?.accessToken) {
+      //toast.error("Please login first");
+      return navigate("/login");
+    }
+
+    setSubscribing(plan);
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/billing/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: auth.accessToken,
+        },
+        body: JSON.stringify({ plan: plan.toUpperCase() }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+
+      if (data.data?.url) {
+        // Paid plan → Stripe checkout এ redirect
+        window.location.href = data.data.url;
+      } else {
+        // FREE plan
+        toast.success("Free plan activated!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Subscription failed");
+    }
+    setSubscribing(null);
+  };
+
   return (
     <div className="bg-[#05050a] text-white overflow-x-hidden mt-10" style={{ fontFamily: "'DM Mono', monospace" }}>
       <style>{`
@@ -257,7 +296,7 @@ function App() {
                     </li>
                   ))}
                 </ul>
-                <Link
+                {/* <Link
                   to="/signup"
                   className={`text-center py-3 rounded-xl text-sm font-bold transition-all
                     ${p.highlight
@@ -266,7 +305,23 @@ function App() {
                     }`}
                 >
                   {p.cta}
-                </Link>
+                </Link> */}
+                <button
+                  onClick={() => handleSubscribe(p.name.toUpperCase())}
+                  disabled={subscribing === p.name.toUpperCase()}
+                  className={`w-full text-center py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50
+    ${p.highlight
+                      ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:opacity-90"
+                      : "border border-white/10 text-zinc-400 hover:border-white/20 hover:text-white"
+                    }`}
+                >
+                  {subscribing === p.name.toUpperCase() ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : p.cta}
+                </button>
               </div>
             ))}
           </div>
