@@ -76,7 +76,7 @@ function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: num
 
 function App() {
   return (
-    <div className="bg-[#05050a] text-white overflow-x-hidden" style={{ fontFamily: "'DM Mono', monospace" }}>
+    <div className="bg-[#05050a] text-white overflow-x-hidden mt-10" style={{ fontFamily: "'DM Mono', monospace" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800;900&display=swap');
         .gradient-text { background: linear-gradient(135deg, #a78bfa, #f0abfc, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
