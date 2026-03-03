@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BASE_URL } from "../App";
+import { Link } from "react-router-dom";
 
 const API = `${BASE_URL}/api/v1`;
 const getHeaders = () => ({
@@ -222,12 +223,14 @@ export default function FileManager() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#05050a]/95 backdrop-blur-sm border-b border-white/5 px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-sm font-black">F</div>
             <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
               File<span className="text-violet-400">Vault</span>
             </span>
           </div>
+          </Link>
 
           <div className="flex items-center gap-2">
             <button
