@@ -20,7 +20,7 @@ const Login = () => {
   const auth = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, isError, error: apiError }] = useLoginMutation();
-   console.log(apiError)
+  //console.log("apiError-------->", apiError?.data)
   const {
     register,
     handleSubmit,
@@ -32,7 +32,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const res = await login(data).unwrap();
-      // console.log("res----->",res)
+      //console.log("res----->",res)
       toast.success("Login successful 🎉");
       const role = res?.role;
       // console.log("role---------->",role)
@@ -71,7 +71,11 @@ const Login = () => {
             <h1 className="text-2xl font-black text-white mb-1" style={{ fontFamily: "'Syne', sans-serif" }}>
               Welcome back
             </h1>
-            <p className="text-zinc-600 text-sm">Sign in to your account</p>
+            {isError && (
+              <p className="text-red-400 text-sm text-center">
+                {(apiError as any)?.data?.message || "Login failed. Please try again."}
+              </p>
+            )}
           </div>
 
           {/* Zod errors */}
