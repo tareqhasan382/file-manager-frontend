@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-// import { useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-// import type { RootState } from "../Redux/store";
+import type { RootState } from "../Redux/store";
 import type { JSX } from "react";
 
 type Props = {
@@ -11,11 +11,7 @@ type Props = {
 
 const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   const navigate = useNavigate();
-  //const { accessToken, user } = useSelector((state: RootState) => state.auth);
- let accessToken="asdsadasdasdasd"
- const user={
-    role:"SUPER_ADMIN"
- }
+  const { accessToken, user } = useSelector((state: RootState) => state.auth);
   useEffect(() => {
     // Not logged in
     if (!accessToken) {
