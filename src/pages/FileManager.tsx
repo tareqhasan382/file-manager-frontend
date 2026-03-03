@@ -192,6 +192,7 @@ export default function FileManager() {
     f.name.toLowerCase().includes(search.toLowerCase())
   );
   const currentFiles = files.filter(f =>
+    f.folderId === (currentFolder?.id || null) &&  
     f.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -293,11 +294,11 @@ export default function FileManager() {
                 </div>
               </div>
             )}
-<div>
-<p className="text-zinc-600 text-sm mb-6">
-  Create a folder or upload your first file.{" "}
-  <span className="text-zinc-700">Double-click folders to open, double-click files to preview.</span>
-</p></div>
+            <div>
+              <p className="text-zinc-600 text-sm mb-6">
+                Create a folder or upload your first file.{" "}
+                <span className="text-zinc-700">Double-click folders to open, double-click files to preview.</span>
+              </p></div>
             {/* GRID VIEW */}
             {view === "grid" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -506,9 +507,9 @@ export default function FileManager() {
             {/* File metadata grid */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: "Size",     value: formatSize(previewFile.size) },
-                { label: "Type",     value: previewFile.mimeType.split("/")[1]?.toUpperCase() || "—" },
-                { label: "Path",     value: previewFile.path },
+                { label: "Size", value: formatSize(previewFile.size) },
+                { label: "Type", value: previewFile.mimeType.split("/")[1]?.toUpperCase() || "—" },
+                { label: "Path", value: previewFile.path },
                 { label: "Uploaded", value: formatDate(previewFile.createdAt) },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-white/3 border border-white/8 rounded-xl px-3 py-2">
