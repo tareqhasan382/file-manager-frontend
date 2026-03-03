@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../Redux/hooks";
+import type { RootState } from "../Redux/store";
+import { userLoggedOut } from "../Redux/authSlice";
 
 const Navbar = () => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const auth = useAppSelector((state: RootState) => state.auth);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
@@ -14,18 +20,25 @@ const Navbar = () => {
 
   useEffect(() => setMenuOpen(false), [location]);
 
+  const handleLogout = () => {
+    dispatch(userLoggedOut());
+    navigate("/");
+  };
+
   const navLinks = [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
     { label: "About", href: "#about" },
   ];
 
+  const isLoggedIn = !!auth?.user;
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-[#05050a]/95 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
           ? "bg-[#05050a]/95 backdrop-blur-xl border-b border-white/5 py-3"
-          : "bg-transparent py-5"
+          : "bg-[#05050a]/95 py-5"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
@@ -42,11 +55,7 @@ const Navbar = () => {
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="text-zinc-400 hover:text-white text-sm font-medium transition-colors tracking-wide"
-            >
+            <a key={l.label} href={l.href} className="text-zinc-400 hover:text-white text-sm font-medium transition-colors tracking-wide">
               {l.label}
             </a>
           ))}
@@ -54,18 +63,36 @@ const Navbar = () => {
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            to="/login"
-            className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/signup"
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40"
-          >
-            Get Started
-          </Link>
+          {isLoggedIn ? (
+            <>
+              {/* show user email */}
+              <span className="text-zinc-500 text-xs truncate max-w-[140px]">{auth.user?.email}</span>
+              <Link
+                to="/files"
+                className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+              >
+                My Files
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2">
+                Sign in
+              </Link>
+              <Link
+                to="/signup"
+                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -80,24 +107,40 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden transition-all duration-300 bg-[#05050a] overflow-hidden ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
+      <div className={`md:hidden transition-all duration-300 bg-[#05050a] overflow-hidden ${menuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="px-4 pb-4 pt-2 border-t border-white/5 mt-3 space-y-1">
           {navLinks.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="block text-zinc-400 hover:text-white text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors"
-            >
+            <a key={l.label} href={l.href} className="block text-zinc-400 hover:text-white text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors">
               {l.label}
             </a>
           ))}
+
           <div className="pt-2 flex flex-col gap-2">
-            <Link to="/login" className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors">
-              Sign in
-            </Link>
-            <Link to="/signup" className="text-center bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold py-2.5 px-3 rounded-xl">
-              Get Started
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/files"
+                  className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                >
+                  My Files
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-center bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold py-2.5 px-3 rounded-xl hover:bg-red-500/20 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors">
+                  Sign in
+                </Link>
+                <Link to="/signup" className="text-center bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold py-2.5 px-3 rounded-xl">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
