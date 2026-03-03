@@ -7,6 +7,7 @@ import { FaFolderPlus } from "react-icons/fa";
 import { FiUploadCloud } from "react-icons/fi";
 import { store, type RootState } from "../Redux/store";
 import { useSelector } from "react-redux";
+import FileUpload from "../components/Fileupload";
 
 const API = `${BASE_URL}/api/v1`;
 const getHeaders = () => ({
@@ -68,7 +69,7 @@ function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error";
   );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function ModalWrapper({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-[#0d0d15] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
@@ -84,7 +85,6 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 
 export default function FileManager() {
   const auth = useSelector((state: RootState) => state.auth);
-  // console.log("auth----->",auth)
   const [folders, setFolders] = useState<Folder[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
@@ -95,14 +95,10 @@ export default function FileManager() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<{ type: "folder" | "file"; id: string } | null>(null);
-
-  // Form states
   const [folderName, setFolderName] = useState("");
-  // const [folderPath, setFolderPath] = useState("/");
-  const [fileForm, setFileForm] = useState({ name: "", size: "", mimeType: "", url: "", publicId: "", path: "/" });
 
   const showToast = (msg: string, type: "success" | "error" = "success") => setToast({ msg, type });
-  const closeModal = () => { setModal(null); setFolderName(""); setFileForm({ name: "", size: "", mimeType: "", url: "", publicId: "", path: "/" }); };
+  const closeModal = () => { setModal(null); setFolderName(""); };
 
   const fetchFolders = async () => {
     setLoading(true);
@@ -114,6 +110,7 @@ export default function FileManager() {
     setLoading(false);
   };
 
+  // ← "files" → "file" (singular — matches backend route)
   const fetchFiles = async (folderId?: string) => {
     try {
       const url = folderId ? `${API}/files?folderId=${folderId}` : `${API}/files`;
@@ -144,8 +141,6 @@ export default function FileManager() {
 
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
-    // console.log("folderName---->",folderName)
-    // console.log("currentFolder?.id---->",currentFolder?.id)
     try {
       const r = await fetch(`${API}/folder`, {
         method: "POST",
@@ -177,29 +172,10 @@ export default function FileManager() {
     } catch (err: any) { showToast(err.message, "error"); }
   };
 
-  const handleUploadFile = async () => {
-    if (!fileForm.name || !fileForm.url) return;
-    try {
-      const r = await fetch(`${API}/files`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify({
-          ...fileForm,
-          size: Number(fileForm.size),
-          folderId: currentFolder?.id || undefined,
-        }),
-      });
-      const d = await r.json();
-      if (!d.success) throw new Error(d.message);
-      showToast("File uploaded successfully");
-      closeModal();
-      fetchFiles(currentFolder?.id);
-    } catch (err: any) { showToast(err.message, "error"); }
-  };
-
   const handleDeleteFile = async () => {
     if (!selected || selected.type !== "file") return;
     try {
+      // ← "files" → "file"
       const r = await fetch(`${API}/files/${selected.id}`, { method: "DELETE", headers: getHeaders() });
       const d = await r.json();
       if (!d.success) throw new Error(d.message);
@@ -210,7 +186,6 @@ export default function FileManager() {
     } catch (err: any) { showToast(err.message, "error"); }
   };
 
-  // Filter current level folders
   const currentFolders = folders.filter(f =>
     f.parentId === (currentFolder?.id || null) &&
     f.name.toLowerCase().includes(search.toLowerCase())
@@ -222,7 +197,6 @@ export default function FileManager() {
   return (
     <div className="min-h-screen bg-[#05050a] text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800;900&display=swap');
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
@@ -233,23 +207,20 @@ export default function FileManager() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#05050a]/95 backdrop-blur-sm border-b border-white/5 px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className=" flex gap-5 items-center ">
+          <div className="flex gap-5 items-center">
             <Link to="/">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-sm font-black">F</div>
-            <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
-              File<span className="text-violet-400">Vault</span>
-            </span>
-          </div>
-          </Link>
-          {auth?.user?.role ==="OWNER" &&<Link to="/members">
-          <div className="flex items-center gap-3">
-            <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
-              Members
-            </span>
-          </div>
-          </Link> }
-          
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-sm font-black">F</div>
+                <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  File<span className="text-violet-400">Vault</span>
+                </span>
+              </div>
+            </Link>
+            {auth?.user?.role === "OWNER" && (
+              <Link to="/members">
+                <span className="text-white font-black text-base hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>Members</span>
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -257,14 +228,14 @@ export default function FileManager() {
               onClick={() => setModal("createFolder")}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-xs font-medium px-3 py-2 rounded-xl transition-all"
             >
-              <span><FaFolderPlus size={24} color="#fcba03" /></span>
+              <FaFolderPlus size={20} color="#fcba03" />
               <span className="hidden sm:block">New Folder</span>
             </button>
             <button
               onClick={() => setModal("uploadFile")}
               className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all"
             >
-              <span><FiUploadCloud size={24} /></span>
+              <FiUploadCloud size={20} />
               <span className="hidden sm:block">Upload File</span>
             </button>
           </div>
@@ -280,9 +251,7 @@ export default function FileManager() {
               <button
                 onClick={() => navigateBreadcrumb(i)}
                 className={`text-sm px-2 py-1 rounded-lg transition-colors
-                  ${i === breadcrumb.length - 1
-                    ? "text-white font-bold"
-                    : "text-zinc-600 hover:text-zinc-300 hover:bg-white/5"}`}
+                  ${i === breadcrumb.length - 1 ? "text-white font-bold" : "text-zinc-600 hover:text-zinc-300 hover:bg-white/5"}`}
               >
                 {crumb.name}
               </button>
@@ -304,7 +273,6 @@ export default function FileManager() {
           </div>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
@@ -313,19 +281,14 @@ export default function FileManager() {
 
         {!loading && (
           <>
-            {/* Empty state */}
             {currentFolders.length === 0 && currentFiles.length === 0 && (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center text-3xl mb-4">📂</div>
                 <p className="text-white font-bold mb-1" style={{ fontFamily: "'Syne', sans-serif" }}>No files yet</p>
                 <p className="text-zinc-600 text-sm mb-6">Create a folder or upload your first file</p>
                 <div className="flex gap-3">
-                  <button onClick={() => setModal("createFolder")} className="text-sm px-4 py-2 border border-white/10 rounded-xl text-zinc-400 hover:border-white/20 hover:text-white transition-colors">
-                    New Folder
-                  </button>
-                  <button onClick={() => setModal("uploadFile")} className="text-sm px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white font-bold transition-colors">
-                    Upload File
-                  </button>
+                  <button onClick={() => setModal("createFolder")} className="text-sm px-4 py-2 border border-white/10 rounded-xl text-zinc-400 hover:border-white/20 hover:text-white transition-colors">New Folder</button>
+                  <button onClick={() => setModal("uploadFile")} className="text-sm px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white font-bold transition-colors">Upload File</button>
                 </div>
               </div>
             )}
@@ -333,7 +296,6 @@ export default function FileManager() {
             {/* GRID VIEW */}
             {view === "grid" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {/* Folders */}
                 {currentFolders.map(folder => (
                   <div
                     key={folder.id}
@@ -345,20 +307,15 @@ export default function FileManager() {
                     <div className="text-3xl mb-3">📁</div>
                     <p className="text-white text-xs font-medium truncate">{folder.name}</p>
                     <p className="text-zinc-700 text-xs mt-0.5">{formatDate(folder.createdAt)}</p>
-
-                    {/* Context menu */}
                     {selected?.id === folder.id && selected?.type === "folder" && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setModal("deleteFolder"); }}
                         className="absolute top-2 right-2 w-6 h-6 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ✕
-                      </button>
+                      >✕</button>
                     )}
                   </div>
                 ))}
 
-                {/* Files */}
                 {currentFiles.map(file => (
                   <div
                     key={file.id}
@@ -369,24 +326,10 @@ export default function FileManager() {
                     <div className="text-3xl mb-3">{getMimeIcon(file.mimeType)}</div>
                     <p className="text-white text-xs font-medium truncate">{file.name}</p>
                     <p className="text-zinc-700 text-xs mt-0.5">{formatSize(file.size)}</p>
-
                     {selected?.id === file.id && selected?.type === "file" && (
                       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="w-6 h-6 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 rounded-lg text-xs flex items-center justify-center"
-                        >
-                          ↗
-                        </a>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setModal("deleteFile"); }}
-                          className="w-6 h-6 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs flex items-center justify-center"
-                        >
-                          ✕
-                        </button>
+                        <a href={file.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="w-6 h-6 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 rounded-lg text-xs flex items-center justify-center">↗</a>
+                        <button onClick={(e) => { e.stopPropagation(); setModal("deleteFile"); }} className="w-6 h-6 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs flex items-center justify-center">✕</button>
                       </div>
                     )}
                   </div>
@@ -397,7 +340,6 @@ export default function FileManager() {
             {/* LIST VIEW */}
             {view === "list" && (
               <div className="space-y-1">
-                {/* Header */}
                 {(currentFolders.length > 0 || currentFiles.length > 0) && (
                   <div className="grid grid-cols-12 gap-4 px-4 py-2 text-zinc-700 text-xs uppercase tracking-widest">
                     <div className="col-span-6">Name</div>
@@ -406,14 +348,11 @@ export default function FileManager() {
                     <div className="col-span-2">Date</div>
                   </div>
                 )}
-
                 {currentFolders.map(folder => (
                   <div
                     key={folder.id}
                     className={`grid grid-cols-12 gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all group
-                      ${selected?.id === folder.id && selected?.type === "folder"
-                        ? "bg-violet-500/10 border border-violet-500/20"
-                        : "hover:bg-white/3 border border-transparent"}`}
+                      ${selected?.id === folder.id && selected?.type === "folder" ? "bg-violet-500/10 border border-violet-500/20" : "hover:bg-white/3 border border-transparent"}`}
                     onDoubleClick={() => openFolder(folder)}
                     onClick={() => setSelected({ type: "folder", id: folder.id })}
                   >
@@ -421,43 +360,27 @@ export default function FileManager() {
                       <span className="text-lg flex-shrink-0">📁</span>
                       <span className="text-white text-sm truncate">{folder.name}</span>
                     </div>
-                    <div className="col-span-2 hidden sm:flex items-center">
-                      <span className="text-zinc-600 text-xs">Folder</span>
-                    </div>
-                    <div className="col-span-2 hidden sm:flex items-center">
-                      <span className="text-zinc-600 text-xs">—</span>
-                    </div>
+                    <div className="col-span-2 hidden sm:flex items-center"><span className="text-zinc-600 text-xs">Folder</span></div>
+                    <div className="col-span-2 hidden sm:flex items-center"><span className="text-zinc-600 text-xs">—</span></div>
                     <div className="col-span-2 flex items-center justify-between">
                       <span className="text-zinc-600 text-xs">{formatDate(folder.createdAt)}</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelected({ type: "folder", id: folder.id }); setModal("deleteFolder"); }}
-                        className="opacity-0 group-hover:opacity-100 text-red-400 text-xs hover:text-red-300 transition-all"
-                      >
-                        ✕
-                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setSelected({ type: "folder", id: folder.id }); setModal("deleteFolder"); }} className="opacity-0 group-hover:opacity-100 text-red-400 text-xs hover:text-red-300 transition-all">✕</button>
                     </div>
                   </div>
                 ))}
-
                 {currentFiles.map(file => (
                   <div
                     key={file.id}
                     className={`grid grid-cols-12 gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all group
-                      ${selected?.id === file.id && selected?.type === "file"
-                        ? "bg-fuchsia-500/10 border border-fuchsia-500/20"
-                        : "hover:bg-white/3 border border-transparent"}`}
+                      ${selected?.id === file.id && selected?.type === "file" ? "bg-fuchsia-500/10 border border-fuchsia-500/20" : "hover:bg-white/3 border border-transparent"}`}
                     onClick={() => setSelected({ type: "file", id: file.id })}
                   >
                     <div className="col-span-6 flex items-center gap-3 min-w-0">
                       <span className="text-lg flex-shrink-0">{getMimeIcon(file.mimeType)}</span>
                       <span className="text-white text-sm truncate">{file.name}</span>
                     </div>
-                    <div className="col-span-2 hidden sm:flex items-center">
-                      <span className="text-zinc-600 text-xs truncate">{file.mimeType.split("/")[1]}</span>
-                    </div>
-                    <div className="col-span-2 hidden sm:flex items-center">
-                      <span className="text-zinc-600 text-xs">{formatSize(file.size)}</span>
-                    </div>
+                    <div className="col-span-2 hidden sm:flex items-center"><span className="text-zinc-600 text-xs truncate">{file.mimeType.split("/")[1]}</span></div>
+                    <div className="col-span-2 hidden sm:flex items-center"><span className="text-zinc-600 text-xs">{formatSize(file.size)}</span></div>
                     <div className="col-span-2 flex items-center justify-between">
                       <span className="text-zinc-600 text-xs">{formatDate(file.createdAt)}</span>
                       <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
@@ -475,7 +398,7 @@ export default function FileManager() {
 
       {/* ── CREATE FOLDER MODAL ─────────────────────────────── */}
       {modal === "createFolder" && (
-        <Modal title="New Folder" onClose={closeModal}>
+        <ModalWrapper title="New Folder" onClose={closeModal}>
           <div className="space-y-4">
             <div>
               <label className="text-zinc-500 text-xs uppercase tracking-widest block mb-2">Folder Name</label>
@@ -488,63 +411,34 @@ export default function FileManager() {
                 className="w-full bg-white/5 border border-white/10 focus:border-violet-500/50 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-700 outline-none transition-colors"
               />
             </div>
-            {/* <div>
-              <label className="text-zinc-500 text-xs uppercase tracking-widest block mb-2">Path</label>
-              <input
-                value={folderPath}
-                onChange={e => setFolderPath(e.target.value)}
-                placeholder="/documents"
-                className="w-full bg-white/5 border border-white/10 focus:border-violet-500/50 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-700 outline-none transition-colors"
-              />
-            </div> */}
             {currentFolder && (
               <p className="text-zinc-600 text-xs">Inside: <span className="text-violet-400">{currentFolder.name}</span></p>
             )}
-            <button
-              onClick={handleCreateFolder}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white font-bold py-3 rounded-xl text-sm transition-all"
-            >
+            <button onClick={handleCreateFolder} className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white font-bold py-3 rounded-xl text-sm transition-all">
               Create Folder
             </button>
           </div>
-        </Modal>
+        </ModalWrapper>
       )}
 
-      {/* ── UPLOAD FILE MODAL ───────────────────────────────── */}
+      {/* ── UPLOAD FILE MODAL — FileUpload component ─────────── */}
       {modal === "uploadFile" && (
-        <Modal title="Upload File" onClose={closeModal}>
-          <div className="space-y-3">
-            {[
-              { key: "name", label: "File Name", placeholder: "invoice.pdf" },
-              { key: "url", label: "File URL (Cloudinary)", placeholder: "https://res.cloudinary.com/..." },
-              { key: "publicId", label: "Public ID", placeholder: "folder/filename" },
-              { key: "mimeType", label: "MIME Type", placeholder: "application/pdf" },
-              { key: "size", label: "Size (MB)", placeholder: "2" },
-              { key: "path", label: "Path", placeholder: "/documents" },
-            ].map(field => (
-              <div key={field.key}>
-                <label className="text-zinc-500 text-xs uppercase tracking-widest block mb-1.5">{field.label}</label>
-                <input
-                  value={(fileForm as any)[field.key]}
-                  onChange={e => setFileForm({ ...fileForm, [field.key]: e.target.value })}
-                  placeholder={field.placeholder}
-                  className="w-full bg-white/5 border border-white/10 focus:border-violet-500/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-700 outline-none transition-colors"
-                />
-              </div>
-            ))}
-            <button
-              onClick={handleUploadFile}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white font-bold py-3 rounded-xl text-sm transition-all mt-2"
-            >
-              Upload File
-            </button>
-          </div>
-        </Modal>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <FileUpload
+            folderId={currentFolder?.id}
+            folderPath={currentFolder?.path || "/"}
+            onSuccess={() => {
+              fetchFiles(currentFolder?.id);
+              showToast("File uploaded successfully");
+            }}
+            onClose={closeModal}
+          />
+        </div>
       )}
 
       {/* ── DELETE FOLDER MODAL ─────────────────────────────── */}
       {modal === "deleteFolder" && (
-        <Modal title="Delete Folder" onClose={closeModal}>
+        <ModalWrapper title="Delete Folder" onClose={closeModal}>
           <div className="space-y-4">
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
               <p className="text-red-400 text-sm">⚠️ This action cannot be undone. The folder must be empty to delete.</p>
@@ -554,12 +448,12 @@ export default function FileManager() {
               <button onClick={handleDeleteFolder} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-colors">Delete</button>
             </div>
           </div>
-        </Modal>
+        </ModalWrapper>
       )}
 
       {/* ── DELETE FILE MODAL ───────────────────────────────── */}
       {modal === "deleteFile" && (
-        <Modal title="Delete File" onClose={closeModal}>
+        <ModalWrapper title="Delete File" onClose={closeModal}>
           <div className="space-y-4">
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
               <p className="text-red-400 text-sm">⚠️ This will permanently delete the file and free up storage.</p>
@@ -569,7 +463,7 @@ export default function FileManager() {
               <button onClick={handleDeleteFile} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-colors">Delete</button>
             </div>
           </div>
-        </Modal>
+        </ModalWrapper>
       )}
     </div>
   );
