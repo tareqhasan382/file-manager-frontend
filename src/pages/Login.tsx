@@ -20,7 +20,7 @@ const Login = () => {
   const auth = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, isError, error: apiError }] = useLoginMutation();
-
+   console.log(apiError)
   const {
     register,
     handleSubmit,
