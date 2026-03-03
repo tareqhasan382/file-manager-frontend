@@ -28,7 +28,7 @@ type Folder = {
 type FileItem = {
   id: string;
   name: string;
-  size: number;
+  size: number; // stored in KB
   mimeType: string;
   url: string;
   path: string;
@@ -38,9 +38,11 @@ type FileItem = {
 
 type Modal = "createFolder" | "uploadFile" | "deleteFolder" | "deleteFile" | null;
 
-function formatSize(mb: number) {
-  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-  return `${mb} MB`;
+// size is in KB
+function formatSize(kb: number) {
+  if (kb >= 1024 * 1024) return `${(kb / (1024 * 1024)).toFixed(1)} GB`;
+  if (kb >= 1024) return `${(kb / 1024).toFixed(1)} MB`;
+  return `${kb} KB`;
 }
 
 function formatDate(d: string) {
@@ -74,8 +76,8 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-[#0d0d15] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h3 className="text-white font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>{title}</h3>
-          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5">✕</button>
+          <h3 className="text-white font-bold truncate pr-4" style={{ fontFamily: "'Syne', sans-serif" }}>{title}</h3>
+          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 flex-shrink-0">✕</button>
         </div>
         <div className="p-6">{children}</div>
       </div>
@@ -96,6 +98,7 @@ export default function FileManager() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<{ type: "folder" | "file"; id: string } | null>(null);
   const [folderName, setFolderName] = useState("");
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => setToast({ msg, type });
   const closeModal = () => { setModal(null); setFolderName(""); };
@@ -110,7 +113,6 @@ export default function FileManager() {
     setLoading(false);
   };
 
-  // ← "files" → "file" (singular — matches backend route)
   const fetchFiles = async (folderId?: string) => {
     try {
       const url = folderId ? `${API}/files?folderId=${folderId}` : `${API}/files`;
@@ -175,7 +177,6 @@ export default function FileManager() {
   const handleDeleteFile = async () => {
     if (!selected || selected.type !== "file") return;
     try {
-      // ← "files" → "file"
       const r = await fetch(`${API}/files/${selected.id}`, { method: "DELETE", headers: getHeaders() });
       const d = await r.json();
       if (!d.success) throw new Error(d.message);
@@ -292,7 +293,11 @@ export default function FileManager() {
                 </div>
               </div>
             )}
-
+<div>
+<p className="text-zinc-600 text-sm mb-6">
+  Create a folder or upload your first file.{" "}
+  <span className="text-zinc-700">Double-click folders to open, double-click files to preview.</span>
+</p></div>
             {/* GRID VIEW */}
             {view === "grid" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -315,12 +320,11 @@ export default function FileManager() {
                     )}
                   </div>
                 ))}
-
                 {currentFiles.map(file => (
                   <div
                     key={file.id}
                     className="group relative bg-[#0d0d15] border border-white/5 hover:border-fuchsia-500/30 rounded-2xl p-4 cursor-pointer transition-all hover:bg-fuchsia-500/5"
-                    onClick={() => setSelected({ type: "file", id: file.id })}
+                    onClick={() => { setSelected({ type: "file", id: file.id }); setPreviewFile(file); }}
                   >
                     <div className={`absolute inset-0 rounded-2xl border transition-colors ${selected?.id === file.id && selected?.type === "file" ? "border-fuchsia-500/50 bg-fuchsia-500/5" : "border-transparent"}`} />
                     <div className="text-3xl mb-3">{getMimeIcon(file.mimeType)}</div>
@@ -373,7 +377,7 @@ export default function FileManager() {
                     key={file.id}
                     className={`grid grid-cols-12 gap-4 px-4 py-3 rounded-xl cursor-pointer transition-all group
                       ${selected?.id === file.id && selected?.type === "file" ? "bg-fuchsia-500/10 border border-fuchsia-500/20" : "hover:bg-white/3 border border-transparent"}`}
-                    onClick={() => setSelected({ type: "file", id: file.id })}
+                    onClick={() => { setSelected({ type: "file", id: file.id }); setPreviewFile(file); }}
                   >
                     <div className="col-span-6 flex items-center gap-3 min-w-0">
                       <span className="text-lg flex-shrink-0">{getMimeIcon(file.mimeType)}</span>
@@ -421,7 +425,7 @@ export default function FileManager() {
         </ModalWrapper>
       )}
 
-      {/* ── UPLOAD FILE MODAL — FileUpload component ─────────── */}
+      {/* ── UPLOAD FILE MODAL ───────────────────────────────── */}
       {modal === "uploadFile" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <FileUpload
@@ -461,6 +465,79 @@ export default function FileManager() {
             <div className="flex gap-3">
               <button onClick={closeModal} className="flex-1 py-3 border border-white/10 rounded-xl text-zinc-400 text-sm hover:border-white/20 transition-colors">Cancel</button>
               <button onClick={handleDeleteFile} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-colors">Delete</button>
+            </div>
+          </div>
+        </ModalWrapper>
+      )}
+
+      {/* ── FILE PREVIEW MODAL ──────────────────────────────── */}
+      {previewFile && (
+        <ModalWrapper title={previewFile.name} onClose={() => setPreviewFile(null)}>
+          <div className="space-y-4">
+
+            {/* Preview area */}
+            <div className="bg-white/3 border border-white/8 rounded-xl overflow-hidden flex items-center justify-center min-h-48">
+              {previewFile.mimeType.includes("image") ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
+                  className="max-w-full max-h-72 object-contain rounded-xl"
+                />
+              ) : previewFile.mimeType.includes("video") ? (
+                <video src={previewFile.url} controls className="max-w-full max-h-72 rounded-xl w-full" />
+              ) : previewFile.mimeType.includes("audio") ? (
+                <div className="w-full px-4 py-6 space-y-3">
+                  <div className="text-4xl text-center">🎵</div>
+                  <audio src={previewFile.url} controls className="w-full" />
+                </div>
+              ) : previewFile.mimeType.includes("pdf") ? (
+                <div className="text-center py-8 space-y-2">
+                  <div className="text-5xl">📄</div>
+                  <p className="text-zinc-500 text-xs">PDF — open to view</p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-5xl mb-3">{getMimeIcon(previewFile.mimeType)}</div>
+                  <p className="text-zinc-500 text-xs">Preview not available</p>
+                </div>
+              )}
+            </div>
+
+            {/* File metadata grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Size",     value: formatSize(previewFile.size) },
+                { label: "Type",     value: previewFile.mimeType.split("/")[1]?.toUpperCase() || "—" },
+                { label: "Path",     value: previewFile.path },
+                { label: "Uploaded", value: formatDate(previewFile.createdAt) },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-white/3 border border-white/8 rounded-xl px-3 py-2">
+                  <p className="text-zinc-600 text-xs uppercase tracking-widest mb-0.5">{label}</p>
+                  <p className="text-white text-xs font-medium truncate">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelected({ type: "file", id: previewFile.id });
+                  setPreviewFile(null);
+                  setModal("deleteFile");
+                }}
+                className="flex-1 py-2.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm hover:bg-red-500/20 transition-colors"
+              >
+                Delete
+              </button>
+              <a
+                href={previewFile.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-90 text-white font-bold rounded-xl text-sm text-center transition-opacity"
+              >
+                Open File ↗
+              </a>
             </div>
           </div>
         </ModalWrapper>
