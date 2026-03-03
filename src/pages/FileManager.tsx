@@ -5,13 +5,13 @@ import { CiGrid41 } from "react-icons/ci";
 import { LuLayoutList } from "react-icons/lu";
 import { FaFolderPlus } from "react-icons/fa";
 import { FiUploadCloud } from "react-icons/fi";
-import type { RootState } from "../Redux/store";
+import { store, type RootState } from "../Redux/store";
 import { useSelector } from "react-redux";
 
 const API = `${BASE_URL}/api/v1`;
 const getHeaders = () => ({
   "Content-Type": "application/json",
-  Authorization: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjYWViZmUxMi04N2RkLTRhOGQtODc5OC02ZmJhZjJhZjU4MzUiLCJlbWFpbCI6InRhcmVxNDEyMUBnbWFpbC5jb20iLCJyb2xlIjoiT1dORVIiLCJ0ZW5hbnRJZCI6ImIzOWU5MTQ4LWZjNWMtNDhlZS05MTZlLWJjMzkzY2I0ZjY1OSIsImlhdCI6MTc3MjUwMDY0NiwiZXhwIjo3ODIwNTAwNjQ2fQ.SUqPfVCl0V_opDEFx_VGM0hpuIkIowYdvflCe1b2QGg",
+  Authorization: store.getState().auth.accessToken,
 });
 
 type Folder = {
