@@ -2,6 +2,16 @@
 
 A production-ready SaaS platform for secure, team-based file storage with role-based access control, Stripe billing, and Cloudinary-powered file delivery.
 
+### Credentials
+```angular2html
+Super Admin
+Email: superadmin@filevault.com
+Password: SuperSecret123@
+
+Owner
+Email: tareqhasan382@gmail.com
+Password: 12345678
+```
 ---
 
 ## Table of Contents
