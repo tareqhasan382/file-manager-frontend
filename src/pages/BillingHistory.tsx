@@ -3,6 +3,7 @@ import { useAppSelector } from "../Redux/hooks";
 import { FiSearch, FiDownload, FiCreditCard } from "react-icons/fi";
 import { useGetSubscriptionQuery } from "../Redux/billingApi";
 import { BASE_URL } from "../config";
+import Select from "../components/Select";
 
 const API = `${BASE_URL}/api/v1`;
 
@@ -245,30 +246,32 @@ export default function BillingHistory() {
               />
             </div>
 
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[#0f0f13] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-violet-500/40 outline-none transition-colors"
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PAID">Paid</option>
-              <option value="ACTIVE">Active</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
-              <option value="CANCELED">Canceled</option>
-            </select>
+              onChange={setStatusFilter}
+              placeholder="All Statuses"
+              options={[
+                { value: "PENDING", label: "Pending" },
+                { value: "PAID", label: "Paid" },
+                { value: "ACTIVE", label: "Active" },
+                { value: "COMPLETED", label: "Completed" },
+                { value: "FAILED", label: "Failed" },
+                { value: "CANCELED", label: "Canceled" },
+              ]}
+              className="pl-4 pr-3"
+            />
 
-            <select
+            <Select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-[#0f0f13] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-violet-500/40 outline-none transition-colors"
-            >
-              <option value="">All Types</option>
-              <option value="CHECKOUT">Checkout</option>
-              <option value="PAYMENT">Payment</option>
-              <option value="SUBSCRIPTION">Subscription</option>
-            </select>
+              onChange={setTypeFilter}
+              placeholder="All Types"
+              options={[
+                { value: "CHECKOUT", label: "Checkout" },
+                { value: "PAYMENT", label: "Payment" },
+                { value: "SUBSCRIPTION", label: "Subscription" },
+              ]}
+              className="pl-4 pr-3"
+            />
 
             {(search || statusFilter || typeFilter) && (
               <button

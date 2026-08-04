@@ -31,8 +31,7 @@ type Props = {
 
 export default function FileUpload({ folderId, folderPath = "/", onSuccess, onClose }: Props) {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  console.log(uploading)
+  const [, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState("");
@@ -93,7 +92,6 @@ export default function FileUpload({ folderId, folderPath = "/", onSuccess, onCl
   };
 
   const saveToBackend = async (uploaded: UploadedFile) => {
-    console.log("uploaded---------->",uploaded)
     const r = await fetch(`${API}/files`, {
       method: "POST",
       headers: getHeaders(),

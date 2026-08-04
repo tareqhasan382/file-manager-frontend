@@ -1,4 +1,4 @@
-import { createBrowserRouter, useLocation } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import Layout from "./Layout";
 import App from "../App";
 import SuperAdminDashboard from "../components/SuperAdminDashboard";
@@ -15,12 +15,6 @@ import Profile from "../pages/Profile";
 import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import ProtectedRoute from "../components/ProtectedRoute";
-
-// ── Wrapper: forces SuperAdminDashboard to remount on every navigation ──
-function DashboardWrapper() {
-  const location = useLocation();
-  return <SuperAdminDashboard key={location.key} />;
-}
 
 const routes = createBrowserRouter([
   // ── With Layout ──────────────────────────────────────
@@ -51,14 +45,6 @@ const routes = createBrowserRouter([
         ),
       },
       {
-        path: "/dashboard",
-        element: (
-          <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-            <DashboardWrapper />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "/profile",
         element: (
           <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}>
@@ -78,6 +64,14 @@ const routes = createBrowserRouter([
   },
 
   // ── Without Layout ────────────────────────────────────
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+        <SuperAdminDashboard />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: "/files",
     element: (

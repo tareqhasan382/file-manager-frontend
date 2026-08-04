@@ -32,8 +32,6 @@ const Navbar = () => {
   ];
 
   const isLoggedIn = !!auth?.user;
-  // console.log("isLoggedIn------>",isLoggedIn)
-  // console.log("auth------>",auth?.user?.role)
 
   return (
     <nav

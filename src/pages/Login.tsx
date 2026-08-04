@@ -8,13 +8,17 @@ import { useLoginMutation } from "../Redux/authApi";
 import { subscribeToPlan } from "../utils/subscribe";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiShield } from "react-icons/fi";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 type LoginFormData = z.infer<typeof loginSchema>;
+
+const ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL as string | undefined;
+const ADMIN_PASSWORD = import.meta.env.VITE_SUPER_ADMIN_PASSWORD as string | undefined;
+const adminEnabled = Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,7 +27,6 @@ const Login = () => {
   const auth = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, isError, error: apiError }] = useLoginMutation();
-  //console.log("apiError-------->", apiError?.data)
   const {
     register,
     handleSubmit,
@@ -59,6 +62,11 @@ const Login = () => {
     } catch (err) {
       console.error("Login failed", err);
     }
+  };
+
+  const onAdminLogin = () => {
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return;
+    onSubmit({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
   };
 
   useEffect(() => {
@@ -163,6 +171,22 @@ const Login = () => {
                   Signing in...
                 </span>
               ) : "Sign In →"}
+            </button>
+
+            <div className="flex items-center gap-3 my-1">
+              <span className="h-px flex-1 bg-white/10" />
+              <span className="text-zinc-600 text-xs">or</span>
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <button
+              type="button"
+              onClick={onAdminLogin}
+              disabled={isLoading || !adminEnabled}
+              className="w-full flex items-center justify-center gap-2 border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-300 hover:text-white font-medium py-3 rounded-xl text-sm transition-all"
+            >
+              <FiShield className="w-4 h-4 text-violet-400" />
+              {isLoading ? "Signing in..." : "Login as Admin"}
             </button>
 
             <div className="text-center">
