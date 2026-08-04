@@ -74,6 +74,11 @@ export default function Select({
 
   return (
     <div ref={rootRef} className="relative">
+      <style>{`
+        .select-menu::-webkit-scrollbar { width: 4px; }
+        .select-menu::-webkit-scrollbar-track { background: transparent; }
+        .select-menu::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+      `}</style>
       <button
         type="button"
         aria-haspopup="listbox"
@@ -102,7 +107,7 @@ export default function Select({
       {open && (
         <div
           role="listbox"
-          className="absolute z-30 mt-2 w-full min-w-[10rem] bg-[#0d0d15] border border-white/10 rounded-xl py-1.5 shadow-2xl shadow-black/60"
+          className="select-menu absolute z-30 mt-2 w-full min-w-[10rem] max-h-60 overflow-y-auto bg-[#0d0d15] border border-white/10 rounded-xl py-1.5 shadow-2xl shadow-black/60"
         >
           {options.length === 0 ? (
             <p className="px-3.5 py-2 text-sm text-zinc-600">No options</p>
