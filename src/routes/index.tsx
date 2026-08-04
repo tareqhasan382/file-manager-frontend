@@ -5,6 +5,9 @@ import SuperAdminDashboard from "../components/SuperAdminDashboard";
 import NotFound from "../pages/NotFound";
 import Signup from "../pages/Signup";
 import Login from "../pages/Login";
+import VerifyOtp from "../pages/VerifyOtp";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
 import FileManager from "../pages/FileManager";
 import MemberManager from "../pages/MemberManager";
 import Success from "../pages/Success";
@@ -26,6 +29,9 @@ const routes = createBrowserRouter([
       { path: "/", element: <App /> },
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
+      { path: "/verify-otp", element: <VerifyOtp /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password", element: <ResetPassword /> },
       {
         path: "/success",
         element: (

@@ -78,7 +78,7 @@ export default function FileUpload({ folderId, folderPath = "/", onSuccess, onCl
         if (xhr.status === 200) {
           resolve({
             name: file.name,
-            size:Math.max(1, Math.round(res.bytes / 1024)),//Math.round(res.bytes / (1024 * 1024)),
+            size: Math.max(1, Math.round(res.bytes / (1024 * 1024))),
             mimeType: file.type || res.format,
             url: res.secure_url,
             publicId: res.public_id,

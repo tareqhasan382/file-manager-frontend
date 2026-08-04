@@ -28,7 +28,7 @@ type Folder = {
 type FileItem = {
   id: string;
   name: string;
-  size: number; // stored in KB
+  size: number; // stored in MB
   mimeType: string;
   url: string;
   path: string;
@@ -38,11 +38,11 @@ type FileItem = {
 
 type Modal = "createFolder" | "uploadFile" | "deleteFolder" | "deleteFile" | null;
 
-// size is in KB
-function formatSize(kb: number) {
-  if (kb >= 1024 * 1024) return `${(kb / (1024 * 1024)).toFixed(1)} GB`;
-  if (kb >= 1024) return `${(kb / 1024).toFixed(1)} MB`;
-  return `${kb} KB`;
+// size is in MB
+function formatSize(mb: number) {
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  if (mb >= 1) return `${mb.toFixed(1)} MB`;
+  return `${(mb * 1024).toFixed(0)} KB`;
 }
 
 function formatDate(d: string) {

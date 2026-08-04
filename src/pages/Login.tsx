@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { RootState } from "../Redux/store";
 import { useLoginMutation } from "../Redux/authApi";
+import { subscribeToPlan } from "../utils/subscribe";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -17,6 +18,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const pendingPlan = searchParams.get("plan")?.toUpperCase() || null;
   const auth = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, isError, error: apiError }] = useLoginMutation();
@@ -32,12 +35,27 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const res = await login(data).unwrap();
-      //console.log("res----->",res)
       toast.success("Login successful 🎉");
       const role = res?.role;
-      // console.log("role---------->",role)
-      if (role === "SUPER_ADMIN") navigate("/dashboard");
-      else navigate("/files");
+      if (role === "SUPER_ADMIN") {
+        navigate("/dashboard");
+        return;
+      }
+
+      // Continue the plan the user picked on the pricing page
+      if (pendingPlan && pendingPlan !== "FREE") {
+        try {
+          const url = await subscribeToPlan(pendingPlan);
+          if (url) {
+            window.location.assign(url);
+            return;
+          }
+        } catch (err) {
+          toast.error((err as Error)?.message || "Could not start checkout");
+        }
+      }
+
+      navigate("/files");
     } catch (err) {
       console.error("Login failed", err);
     }
@@ -71,11 +89,6 @@ const Login = () => {
             <h1 className="text-2xl font-black text-white mb-1" style={{ fontFamily: "'Syne', sans-serif" }}>
               Welcome back
             </h1>
-            {isError && (
-              <p className="text-red-400 text-sm text-center">
-                {(apiError as any)?.data?.message || "Login failed. Please try again."}
-              </p>
-            )}
           </div>
 
           {/* Zod errors */}
@@ -86,12 +99,22 @@ const Login = () => {
             </div>
           )}
 
-          {/* API error */}
-          {isError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-6">
-              <p className="text-red-400 text-sm">Invalid email or password</p>
-            </div>
-          )}
+            {/* API error */}
+            {isError && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-6">
+                <p className="text-red-400 text-sm">
+                  {(apiError as any)?.data?.message || "Invalid email or password"}
+                </p>
+                {((apiError as any)?.data?.message || "").toLowerCase().includes("verify") && (
+                  <Link
+                    to="/verify-otp"
+                    className="inline-block mt-2 text-violet-400 hover:text-violet-300 text-sm font-medium transition-colors"
+                  >
+                    Verify your email now →
+                  </Link>
+                )}
+              </div>
+            )}
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -141,6 +164,15 @@ const Login = () => {
                 </span>
               ) : "Sign In →"}
             </button>
+
+            <div className="text-center">
+              <Link
+                to="/forgot-password"
+                className="text-zinc-600 hover:text-zinc-400 text-sm font-medium transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </form>
 
           <p className="text-center text-zinc-600 text-sm mt-6">

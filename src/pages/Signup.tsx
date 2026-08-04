@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import type { RootState } from "../Redux/store";
-import { useLoginMutation, useSignupMutation } from "../Redux/authApi";
+import { useSignupMutation } from "../Redux/authApi";
+import { PLANS } from "../utils/subscribe";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -19,11 +20,13 @@ type SignupFormData = z.infer<typeof signupSchema>;
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const auth = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const initialPlan = searchParams.get("plan")?.toUpperCase() || "FREE";
+  const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan);
 
   const [signup] = useSignupMutation();
-  const [login] = useLoginMutation();
 
   const {
     register,
@@ -35,19 +38,22 @@ const Signup = () => {
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      await signup(data).unwrap();
-      await login({ email: data.email, password: data.password }).unwrap();
-      toast.success("Account created & logged in 🎉");
-      navigate("/");
+      await signup({ ...data, plan: selectedPlan }).unwrap();
+
+      // Account is created but inactive until the email OTP is verified.
+      toast.success("Account created! Check your email for the verification code 📩");
+      navigate("/verify-otp", {
+        state: { email: data.email, plan: selectedPlan },
+      });
     } catch (err: any) {
-      toast.error(err?.data?.message || "Something went wrong");
+      toast.error(err?.data?.message || err?.message || "Something went wrong");
     }
   };
 
   useEffect(() => {
     if (auth?.accessToken && auth.user) {
       if (auth.user.role === "SUPER_ADMIN") navigate("/dashboard", { replace: true });
-      else navigate("/", { replace: true });
+      else navigate("/files", { replace: true });
     }
   }, [auth, navigate]);
 
@@ -83,6 +89,34 @@ const Signup = () => {
               {errors.password && <p className="text-red-400 text-sm">{errors.password.message}</p>}
             </div>
           )}
+
+          {/* Plan selector */}
+          <div className="mb-6">
+            <label className="text-zinc-500 text-xs font-medium tracking-widest uppercase block mb-2">
+              Select Plan
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {PLANS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setSelectedPlan(p.value)}
+                  className={`py-2 rounded-xl border text-xs font-bold transition-all ${
+                    selectedPlan === p.value
+                      ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 border-violet-500/50 text-white"
+                      : "bg-white/5 border-white/10 text-zinc-500 hover:border-white/20 hover:text-white"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-zinc-600 text-xs mt-2">
+              {selectedPlan === "FREE"
+                ? "Free plan — no payment required."
+                : `You'll be taken to Stripe checkout for the ${selectedPlan} plan.`}
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -153,7 +187,7 @@ const Signup = () => {
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Creating account...
                 </span>
-              ) : "Create Account →"}
+              ) : selectedPlan !== "FREE" ? `Create ${selectedPlan} Account →` : "Create Account →"}
             </button>
           </form>
 

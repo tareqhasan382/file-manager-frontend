@@ -23,7 +23,7 @@ type User = {
   email: string;
   role: string;
   createdAt: string;
-  tenant: { name: string; plan: Plan; isBanned: boolean } | null;
+  tenant: { name: string; plan: Plan; subscriptionStatus: string | null; isBanned: boolean } | null;
 };
 type Stats = {
   totalTenants: number;
@@ -32,6 +32,27 @@ type Stats = {
   totalUsers: number;
   totalFiles: number;
   planBreakdown: { plan: Plan; count: number }[];
+};
+type BillingType = "CHECKOUT" | "PAYMENT" | "SUBSCRIPTION";
+type BillingStatus = "PENDING" | "PAID" | "ACTIVE" | "FAILED" | "CANCELED";
+type BillingRecord = {
+  id: string;
+  tenantName: string | null;
+  plan: Plan;
+  type: BillingType;
+  status: BillingStatus;
+  amount: number; // cents
+  currency: string;
+  description: string;
+  createdAt: string;
+};
+type BillingSummary = {
+  totalRecords: number;
+  totalRevenue: number;
+  paidPayments: number;
+  activeSubscriptions: number;
+  failedPayments: number;
+  pendingCheckouts: number;
 };
 
 const planColors: Record<Plan, string> = {
@@ -47,6 +68,28 @@ const planDot: Record<Plan, string> = {
   GOLD: "bg-amber-400",
   DIAMOND: "bg-cyan-400",
 };
+
+const billingStatusColors: Record<BillingStatus, string> = {
+  PENDING: "bg-amber-900/50 text-amber-400",
+  PAID: "bg-emerald-900/50 text-emerald-400",
+  ACTIVE: "bg-indigo-900/50 text-indigo-400",
+  FAILED: "bg-red-900/50 text-red-400",
+  CANCELED: "bg-zinc-800 text-zinc-400",
+};
+
+const billingTypeColors: Record<BillingType, string> = {
+  CHECKOUT: "bg-violet-900/50 text-violet-400",
+  PAYMENT: "bg-emerald-900/50 text-emerald-400",
+  SUBSCRIPTION: "bg-cyan-900/50 text-cyan-400",
+};
+
+const formatMoney = (cents: number, currency: string) => {
+  const symbol = currency.toUpperCase() === "USD" ? "$" : `${currency.toUpperCase()} `;
+  return `${symbol}${(cents / 100).toFixed(2)}`;
+};
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 function StatCard({ label, value, sub, accent }: { label: string; value: number | string; sub?: string; accent: string }) {
   return (
@@ -68,6 +111,22 @@ function PlanBadge({ plan }: { plan: Plan }) {
   );
 }
 
+function SubscriptionStatusBadge({ status }: { status?: string | null }) {
+  if (!status || status === "ACTIVE") return null;
+  if (status === "INCOMPLETE") {
+    return (
+      <span className="text-xs px-2 py-1 bg-amber-900/50 text-amber-400 rounded-full font-bold">
+        PAYMENT PENDING
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-400 rounded-full font-bold">
+      {status}
+    </span>
+  );
+}
+
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -83,10 +142,12 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 }
 
 export default function SuperAdminDashboard() {
-  const [tab, setTab] = useState<"stats" | "tenants" | "users">("stats");
+  const [tab, setTab] = useState<"stats" | "tenants" | "users" | "billing">("stats");
   const [stats, setStats] = useState<Stats | null>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [billing, setBilling] = useState<BillingRecord[]>([]);
+  const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [planModal, setPlanModal] = useState<Tenant | null>(null);
@@ -129,10 +190,22 @@ export default function SuperAdminDashboard() {
     setLoading(false);
   };
 
+  const fetchBilling = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${API}/billing`, { headers });
+      const d = await r.json();
+      setBilling(d.data?.records || []);
+      setBillingSummary(d.data?.summary || null);
+    } catch { showToast("Failed to fetch billing", "error"); }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (tab === "stats") fetchStats();
     if (tab === "tenants") fetchTenants();
     if (tab === "users") fetchUsers();
+    if (tab === "billing") fetchBilling();
   }, [tab]);
 
   const handleBanToggle = async (id: string) => {
@@ -173,6 +246,7 @@ export default function SuperAdminDashboard() {
     { id: "stats", label: "Overview", icon: "◈" },
     { id: "tenants", label: "Tenants", icon: "⬡" },
     { id: "users", label: "Users", icon: "◎" },
+    { id: "billing", label: "Billing", icon: "¢" },
   ] as const;
   return (
     <div className="min-h-screen bg-[#080809] text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -307,6 +381,7 @@ export default function SuperAdminDashboard() {
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                     <PlanBadge plan={t.plan} />
+                    <SubscriptionStatusBadge status={t.subscriptionStatus} />
                     {t.isBanned && (
                       <span className="text-xs px-2 py-1 bg-red-900/50 text-red-400 rounded-full font-bold">BANNED</span>
                     )}
@@ -358,12 +433,71 @@ export default function SuperAdminDashboard() {
                       {u.role}
                     </span>
                     {u.tenant && <PlanBadge plan={u.tenant.plan} />}
+                    {u.tenant && <SubscriptionStatusBadge status={u.tenant.subscriptionStatus} />}
                   </div>
                 </div>
               ))}
 
               {filteredUsers.length === 0 && (
                 <div className="text-center py-16 text-zinc-600">No users found</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── BILLING TAB ──────────────────────────────────── */}
+        {!loading && tab === "billing" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>Billing Ledger</h1>
+              <p className="text-zinc-600 text-sm mt-1">Every checkout, payment and subscription event</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+              <StatCard label="Total Records" value={billingSummary?.totalRecords ?? 0} accent="bg-violet-500" />
+              <StatCard label="Revenue (PAID)" value={formatMoney(billingSummary?.totalRevenue ?? 0, "USD")} accent="bg-emerald-500" />
+              <StatCard label="Successful Payments" value={billingSummary?.paidPayments ?? 0} accent="bg-emerald-500" />
+              <StatCard label="Active Subs" value={billingSummary?.activeSubscriptions ?? 0} accent="bg-indigo-500" />
+              <StatCard label="Failed Payments" value={billingSummary?.failedPayments ?? 0} accent="bg-red-500" />
+              <StatCard label="Pending Checkouts" value={billingSummary?.pendingCheckouts ?? 0} accent="bg-amber-500" />
+            </div>
+
+            <div className="rounded-2xl bg-[#0f0f13] border border-white/5 overflow-x-auto">
+              <table className="w-full text-sm min-w-[760px]">
+                <thead>
+                  <tr className="border-b border-white/5 text-zinc-600 text-left">
+                    <th className="px-4 py-3 font-semibold">Tenant</th>
+                    <th className="px-4 py-3 font-semibold">Plan</th>
+                    <th className="px-4 py-3 font-semibold">Type</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Amount</th>
+                    <th className="px-4 py-3 font-semibold">Description</th>
+                    <th className="px-4 py-3 font-semibold">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billing.map(b => (
+                    <tr key={b.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="px-4 py-3 text-white">{b.tenantName || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${planColors[b.plan]}`}>{b.plan}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${billingTypeColors[b.type]}`}>{b.type}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${billingStatusColors[b.status]}`}>{b.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-white">{formatMoney(b.amount, b.currency)}</td>
+                      <td className="px-4 py-3 text-zinc-400">{b.description}</td>
+                      <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{formatDate(b.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {billing.length === 0 && (
+                <div className="text-center py-16 text-zinc-600">No billing activity yet</div>
               )}
             </div>
           </div>
@@ -378,6 +512,7 @@ export default function SuperAdminDashboard() {
               {[
                 { label: "Plan", value: <PlanBadge plan={selectedTenant.plan} /> },
                 { label: "Status", value: selectedTenant.isBanned ? <span className="text-red-400 font-bold text-sm">Banned</span> : <span className="text-emerald-400 font-bold text-sm">Active</span> },
+                { label: "Subscription", value: <span className="text-white text-sm">{selectedTenant.subscriptionStatus ?? "—"}</span> },
                 { label: "Users", value: <span className="text-white text-sm">{selectedTenant._count.users}</span> },
                 { label: "Files", value: <span className="text-white text-sm">{selectedTenant._count.files}</span> },
                 { label: "Storage", value: <span className="text-white text-sm">{selectedTenant.storageUsed} MB</span> },

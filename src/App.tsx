@@ -84,8 +84,8 @@ function App() {
 
   const handleSubscribe = async (plan: string) => {
     if (!auth?.accessToken) {
-      //toast.error("Please login first");
-      return navigate("/login");
+      // Preserve the selected plan across the signup/login journey
+      return navigate(`/signup?plan=${plan}`);
     }
 
     setSubscribing(plan);

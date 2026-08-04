@@ -38,7 +38,67 @@ export const authApi = baseApi.injectEndpoints({
         }
       },
     }),
+
+    verifyOtp: builder.mutation({
+      query: (data) => ({
+        url: "/api/v1/auth/verify-otp",
+        method: "POST",
+        body: data,
+      }),
+
+      // verify-otp returns tokens in `data` (sendResponse wrapper) and
+      // auto-logs the user in so they can continue straight into the app.
+      async onQueryStarted(_, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.data?.accessToken;
+
+          if (token) {
+            const decodedUser = jwtDecode(token);
+            dispatch(
+              userLoggedIn({
+                accessToken: token,
+                user: { ...decodedUser },
+              })
+            );
+          }
+        } catch (err) {
+          console.error("Verify OTP failed:", err);
+        }
+      },
+    }),
+
+    resendOtp: builder.mutation({
+      query: (data) => ({
+        url: "/api/v1/auth/resend-otp",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    forgotPassword: builder.mutation({
+      query: (data) => ({
+        url: "/api/v1/auth/forgot-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: "/api/v1/auth/reset-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation, useSignupMutation } = authApi;
+export const {
+  useLoginMutation,
+  useSignupMutation,
+  useVerifyOtpMutation,
+  useResendOtpMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+} = authApi;
