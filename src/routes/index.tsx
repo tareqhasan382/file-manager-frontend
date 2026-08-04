@@ -10,6 +10,8 @@ import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import FileManager from "../pages/FileManager";
 import MemberManager from "../pages/MemberManager";
+import BillingHistory from "../pages/BillingHistory";
+import Profile from "../pages/Profile";
 import Success from "../pages/Success";
 import Cancel from "../pages/Cancel";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -53,6 +55,22 @@ const routes = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
             <DashboardWrapper />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/billing-history",
+        element: (
+          <ProtectedRoute allowedRoles={["OWNER", "ADMIN", "MEMBER"]}>
+            <BillingHistory />
           </ProtectedRoute>
         ),
       },

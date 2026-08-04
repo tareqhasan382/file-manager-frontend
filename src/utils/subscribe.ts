@@ -1,6 +1,5 @@
 import { store } from "../Redux/store";
-
-const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
+import { BASE_URL } from "../config";
 
 export const PLANS = [
   { value: "FREE", label: "Free", price: "$0" },

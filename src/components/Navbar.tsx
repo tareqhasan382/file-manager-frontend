@@ -62,31 +62,47 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          {isLoggedIn ? (
-            <>
-              {/* show user email */}
-              <span className="text-zinc-500 text-xs truncate max-w-[140px]">{auth.user?.email}</span>
-              {auth?.user?.role === "SUPER_ADMIN" ? <Link
-                to="/dashboard"
-                className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
-              >
-                Dashboard
-              </Link> : <Link
-                to="/files"
-                className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
-              >
-                My Files
-              </Link>}
-              <button
-                onClick={handleLogout}
-                className="bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-3">
+            {isLoggedIn ? (
+              <>
+                {/* show user email */}
+                <span className="text-zinc-500 text-xs truncate max-w-[140px]">{auth.user?.email}</span>
+                {auth?.user?.role === "SUPER_ADMIN" ? <Link
+                  to="/dashboard"
+                  className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+                >
+                  Dashboard
+                </Link> : (
+                  <>
+                    <Link
+                      to="/files"
+                      className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+                    >
+                      My Files
+                    </Link>
+                    <Link
+                      to="/billing-history"
+                      className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+                    >
+                      Billing
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2"
+                    >
+                      Profile
+                    </Link>
+                  </>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="bg-white/5 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-zinc-400 hover:text-red-400 text-sm font-medium px-5 py-2.5 rounded-xl transition-all"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
             <>
               <Link to="/login" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors px-4 py-2">
                 Sign in
@@ -124,12 +140,35 @@ const Navbar = () => {
           <div className="pt-2 flex flex-col gap-2">
             {isLoggedIn ? (
               <>
-                <Link
-                  to="/files"
-                  className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
-                >
-                  My Files
-                </Link>
+                {auth?.user?.role === "SUPER_ADMIN" ? (
+                  <Link
+                    to="/dashboard"
+                    className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/files"
+                      className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                    >
+                      My Files
+                    </Link>
+                    <Link
+                      to="/billing-history"
+                      className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                    >
+                      Billing
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="text-center text-zinc-400 text-sm py-2.5 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  </>
+                )}
                 <button
                   onClick={handleLogout}
                   className="text-center bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold py-2.5 px-3 rounded-xl hover:bg-red-500/20 transition-colors"

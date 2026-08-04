@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BASE_URL } from "../App";
+import { BASE_URL } from "../config";
 import { Link } from "react-router-dom";
 import { store } from "../Redux/store";
 

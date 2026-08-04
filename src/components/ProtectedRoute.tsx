@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../Redux/store";
 import { userLoggedOut } from "../Redux/authSlice";
-import { BASE_URL } from "../App";
+import { BASE_URL } from "../config";
 import type { JSX } from "react";
 
 type Props = {

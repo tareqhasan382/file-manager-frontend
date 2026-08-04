@@ -6,7 +6,7 @@ export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     signup: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/signup",
+        url: "/auth/signup",
         method: "POST",
         body: data,
       }),
@@ -14,7 +14,7 @@ export const authApi = baseApi.injectEndpoints({
 
     login: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/sigin",
+        url: "/auth/sigin",
         method: "POST",
         body: data,
       }),
@@ -41,7 +41,7 @@ export const authApi = baseApi.injectEndpoints({
 
     verifyOtp: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/verify-otp",
+        url: "/auth/verify-otp",
         method: "POST",
         body: data,
       }),
@@ -70,7 +70,7 @@ export const authApi = baseApi.injectEndpoints({
 
     resendOtp: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/resend-otp",
+        url: "/auth/resend-otp",
         method: "POST",
         body: data,
       }),
@@ -78,7 +78,7 @@ export const authApi = baseApi.injectEndpoints({
 
     forgotPassword: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/forgot-password",
+        url: "/auth/forgot-password",
         method: "POST",
         body: data,
       }),
@@ -86,8 +86,45 @@ export const authApi = baseApi.injectEndpoints({
 
     resetPassword: builder.mutation({
       query: (data) => ({
-        url: "/api/v1/auth/reset-password",
+        url: "/auth/reset-password",
         method: "POST",
+        body: data,
+      }),
+    }),
+
+    logout: builder.mutation({
+      query: () => ({
+        url: "/auth/logout",
+        method: "POST",
+      }),
+    }),
+
+    getMe: builder.query({
+      query: () => ({
+        url: "/auth/me",
+        method: "GET",
+      }),
+    }),
+
+    getUserMe: builder.query({
+      query: () => ({
+        url: "/user/me",
+        method: "GET",
+      }),
+    }),
+
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: "/user/profile",
+        method: "PATCH",
+        body: data,
+      }),
+    }),
+
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: "/user/password",
+        method: "PATCH",
         body: data,
       }),
     }),
@@ -101,4 +138,9 @@ export const {
   useResendOtpMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useLogoutMutation,
+  useGetMeQuery,
+  useGetUserMeQuery,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
 } = authApi;

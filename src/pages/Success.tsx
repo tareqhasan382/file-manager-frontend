@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useGetSubscriptionQuery } from "../Redux/billingApi";
 
 type Particle = {
   x: number;
@@ -13,6 +14,18 @@ const Success = () => {
   const [visible, setVisible] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
 
+  // Poll until the checkout.session.completed webhook flips the subscription
+  // to ACTIVE. Stripe redirects here immediately after payment, so the DB may
+  // briefly lag behind. We keep showing a "activating" state until it lands.
+  const { data, isFetching } = useGetSubscriptionQuery(undefined, {
+    pollingInterval: 3000,
+  });
+
+  const subscriptionStatus = data?.subscriptionStatus ?? null;
+  const plan = data?.plan ?? null;
+  const pendingPlan = data?.pendingPlan ?? null;
+  const isActive = subscriptionStatus === "ACTIVE";
+
   useEffect(() => {
     setTimeout(() => setVisible(true), 100);
     setParticles(
@@ -25,6 +38,12 @@ const Success = () => {
       }))
     );
   }, []);
+
+  const statusText = isActive
+    ? `Your ${plan ?? ""} plan is now active.`
+    : pendingPlan
+      ? `Activating your ${pendingPlan} plan…`
+      : "Processing your payment…";
 
   return (
     <div
@@ -49,6 +68,10 @@ const Success = () => {
         @keyframes slideUp {
           0%   { opacity: 0; transform: translateY(20px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
 
@@ -92,22 +115,33 @@ const Success = () => {
               : "none",
           }}
         >
-          <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-            <path
-              d="M11 21 L18 28 L31 13"
-              stroke="#10b981"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray="60"
-              strokeDashoffset="60"
+          {isActive ? (
+            <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+              <path
+                d="M11 21 L18 28 L31 13"
+                stroke="#10b981"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="60"
+                strokeDashoffset="60"
+                style={{
+                  animation: visible
+                    ? "checkDraw 0.45s ease 0.55s forwards"
+                    : "none",
+                }}
+              />
+            </svg>
+          ) : (
+            <div
+              className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent"
               style={{
-                animation: visible
-                  ? "checkDraw 0.45s ease 0.55s forwards"
-                  : "none",
+                animation: "spin 0.9s linear infinite",
+                opacity: visible ? 1 : 0,
+                transition: "opacity 0.3s ease",
               }}
             />
-          </svg>
+          )}
         </div>
 
         {/* Heading */}
@@ -124,11 +158,15 @@ const Success = () => {
             className="text-white text-3xl sm:text-4xl font-black mb-3"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
-            You're all set!
+            {isActive ? "You're all set!" : "Almost there…"}
           </h1>
-          <p className="text-zinc-500 text-sm leading-relaxed mb-8">
-            Your plan is now active. Enjoy your new storage limits and start
-            uploading files right away.
+          <p className="text-zinc-500 text-sm leading-relaxed mb-2">
+            {isActive
+              ? "Your plan is now active. Enjoy your new storage limits and start uploading files right away."
+              : "Your payment was received. We're activating your subscription — this can take a few seconds."}
+          </p>
+          <p className="text-zinc-400 text-xs mb-8">
+            {isFetching && !isActive ? "Syncing…" : statusText}
           </p>
         </div>
 
@@ -141,10 +179,10 @@ const Success = () => {
           }}
         >
           <Link
-            to="/dashboard"
+            to={isActive ? "/files" : "/profile"}
             className="block w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-white font-bold rounded-2xl text-sm transition-opacity"
           >
-            Go to Dashboard →
+            {isActive ? "Go to Dashboard →" : "Check Plan Status"}
           </Link>
           <Link
             to="/"

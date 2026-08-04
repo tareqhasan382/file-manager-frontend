@@ -1,19 +1,15 @@
 import { useState, useEffect } from "react";
-import { BASE_URL } from "../App";
+import { BASE_URL } from "../config";
 import { Link } from "react-router-dom";
 import { CiGrid41 } from "react-icons/ci";
 import { LuLayoutList } from "react-icons/lu";
 import { FaFolderPlus } from "react-icons/fa";
 import { FiUploadCloud } from "react-icons/fi";
-import { store, type RootState } from "../Redux/store";
-import { useSelector } from "react-redux";
 import FileUpload from "../components/Fileupload";
+import { useAppSelector } from "../Redux/hooks";
+import { useGetSubscriptionQuery } from "../Redux/billingApi";
 
 const API = `${BASE_URL}/api/v1`;
-const getHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: store.getState().auth.accessToken,
-});
 
 type Folder = {
   id: string;
@@ -86,7 +82,14 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
 }
 
 export default function FileManager() {
-  const auth = useSelector((state: RootState) => state.auth);
+  const auth = useAppSelector((state) => state.auth);
+  const { data: subscription } = useGetSubscriptionQuery(undefined, {
+    pollingInterval: 10000,
+  });
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: auth.accessToken,
+  });
   const [folders, setFolders] = useState<Folder[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
@@ -243,6 +246,37 @@ export default function FileManager() {
           </div>
         </div>
       </header>
+
+      {/* Plan / subscription banner */}
+      {subscription && (
+        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-4">
+          <div
+            className={`flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl border text-xs font-medium ${
+              subscription.subscriptionStatus === "ACTIVE"
+                ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                : subscription.pendingPlan
+                  ? "bg-amber-500/5 border-amber-500/20 text-amber-400"
+                  : "bg-white/3 border-white/10 text-zinc-500"
+            }`}
+          >
+            <span className="font-bold uppercase tracking-widest">Plan: {subscription.plan ?? "—"}</span>
+            <span className="opacity-50">•</span>
+            <span>Status: {subscription.subscriptionStatus ?? "—"}</span>
+            {subscription.pendingPlan && (
+              <>
+                <span className="opacity-50">•</span>
+                <span>{subscription.pendingPlan} plan pending activation…</span>
+              </>
+            )}
+            <Link
+              to="/billing-history"
+              className="ml-auto text-violet-400 hover:text-violet-300 font-semibold transition-colors"
+            >
+              Billing →
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         {/* Breadcrumb */}

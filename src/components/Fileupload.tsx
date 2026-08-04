@@ -3,10 +3,8 @@ import { FiUploadCloud } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { store } from "../Redux/store";
+import { BASE_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_UPLOAD_URL } from "../config";
 
-const CLOUD_NAME = import.meta.env.VITE_APP_Cloud_name;
-const PRESET_NAME = import.meta.env.VITE_APP_preset_name;
-const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
 const API = `${BASE_URL}/api/v1`;
 
 const getHeaders = () => ({
@@ -62,8 +60,8 @@ export default function FileUpload({ folderId, folderPath = "/", onSuccess, onCl
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", PRESET_NAME);
-      formData.append("cloud_name", CLOUD_NAME);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("cloud_name", CLOUDINARY_CLOUD_NAME);
 
       const xhr = new XMLHttpRequest();
 
@@ -89,7 +87,7 @@ export default function FileUpload({ folderId, folderPath = "/", onSuccess, onCl
       };
 
       xhr.onerror = () => reject(new Error("Network error during upload"));
-      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`);
+      xhr.open("POST", CLOUDINARY_UPLOAD_URL);
       xhr.send(formData);
     });
   };

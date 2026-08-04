@@ -1,13 +1,31 @@
-import { useState, useEffect } from "react";
-import { BASE_URL } from "../App";
-import { store }from "../Redux/store";
-const API = `${BASE_URL}/api/v1/admin`;
-const headers = {
-  "Content-Type": "application/json",
-  Authorization: store.getState().auth.accessToken,   //  NOT Bearer
-};
+import { useState, useEffect, useRef } from "react";
+import {
+  useGetStatsQuery,
+  useGetAllTenantsQuery,
+  useToggleBanTenantMutation,
+  useChangeTenantPlanMutation,
+  useGetAllUsersQuery,
+  useGetAllBillingQuery,
+  useGetAuditLogsQuery,
+} from "../Redux/adminApi";
 
 type Plan = "FREE" | "SILVER" | "GOLD" | "DIAMOND";
+type AuditLogEntry = {
+  _id: string;
+  actorId: string | null;
+  actorEmail: string;
+  actorRole: string;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  tenantId: string | null;
+  ipAddress: string;
+  userAgent: string;
+  details: Record<string, any> | null;
+  status: "SUCCESS" | "FAILURE";
+  createdAt: string;
+  updatedAt: string;
+};
 type Tenant = {
   id: string;
   name: string;
@@ -34,7 +52,7 @@ type Stats = {
   planBreakdown: { plan: Plan; count: number }[];
 };
 type BillingType = "CHECKOUT" | "PAYMENT" | "SUBSCRIPTION";
-type BillingStatus = "PENDING" | "PAID" | "ACTIVE" | "FAILED" | "CANCELED";
+type BillingStatus = "PENDING" | "PAID" | "ACTIVE" | "COMPLETED" | "FAILED" | "CANCELED";
 type BillingRecord = {
   id: string;
   tenantName: string | null;
@@ -73,6 +91,7 @@ const billingStatusColors: Record<BillingStatus, string> = {
   PENDING: "bg-amber-900/50 text-amber-400",
   PAID: "bg-emerald-900/50 text-emerald-400",
   ACTIVE: "bg-indigo-900/50 text-indigo-400",
+  COMPLETED: "bg-emerald-900/50 text-emerald-400",
   FAILED: "bg-red-900/50 text-red-400",
   CANCELED: "bg-zinc-800 text-zinc-400",
 };
@@ -90,6 +109,28 @@ const formatMoney = (cents: number, currency: string) => {
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+const formatLogTime = (d: string) =>
+  new Date(d).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+const logActionColors: Record<string, string> = {
+  LOGIN: "bg-emerald-900/50 text-emerald-400",
+  LOGOUT: "bg-zinc-800 text-zinc-400",
+  SIGNUP: "bg-indigo-900/50 text-indigo-400",
+  PROFILE_UPDATE: "bg-sky-900/50 text-sky-400",
+  PASSWORD_CHANGE: "bg-amber-900/50 text-amber-400",
+  PAYMENT: "bg-emerald-900/50 text-emerald-400",
+  SUBSCRIPTION_CREATED: "bg-violet-900/50 text-violet-400",
+  PLAN_CHANGE: "bg-fuchsia-900/50 text-fuchsia-400",
+  FILE_UPLOAD: "bg-cyan-900/50 text-cyan-400",
+  ADMIN_ACTION: "bg-rose-900/50 text-rose-400",
+};
 
 function StatCard({ label, value, sub, accent }: { label: string; value: number | string; sub?: string; accent: string }) {
   return (
@@ -142,78 +183,110 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 }
 
 export default function SuperAdminDashboard() {
-  const [tab, setTab] = useState<"stats" | "tenants" | "users" | "billing">("stats");
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [billing, setBilling] = useState<BillingRecord[]>([]);
-  const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<"stats" | "tenants" | "users" | "billing" | "logs">("stats");
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [planModal, setPlanModal] = useState<Tenant | null>(null);
   const [newPlan, setNewPlan] = useState<Plan>("FREE");
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
+  // ── Logs tab state (scrolling pagination) ─────────────────────────
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsSearch, setLogsSearch] = useState("");
+  const [logsAction, setLogsAction] = useState("");
+  const [logsStatus, setLogsStatus] = useState("");
+  const [totalLogs, setTotalLogs] = useState(0);
+  const logsSentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const logsParams = new URLSearchParams({
+    page: String(logsPage),
+    limit: "20",
+  });
+  if (logsSearch) logsParams.set("search", logsSearch);
+  if (logsAction) logsParams.set("action", logsAction);
+  if (logsStatus) logsParams.set("status", logsStatus);
+
+  const {
+    data: logsData,
+    isFetching: logsFetching,
+    isError: logsError,
+  } = useGetAuditLogsQuery(logsParams.toString(), { skip: tab !== "logs" });
+
+  // Reset + reload page 1 whenever the tab or a log filter changes.
+  useEffect(() => {
+    if (tab === "logs") {
+      setLogs([]);
+      setLogsPage(1);
+      setTotalLogs(0);
+    }
+  }, [tab, logsSearch, logsAction, logsStatus]);
+
+  // Merge incoming pages into the list (replace on page 1, dedupe on append).
+  useEffect(() => {
+    if (tab !== "logs" || !logsData?.data) return;
+    const incoming = logsData.data as AuditLogEntry[];
+    setLogs((prev) => {
+      if (logsPage === 1) return incoming;
+      const seen = new Set(prev.map((l) => l._id));
+      return [...prev, ...incoming.filter((l) => !seen.has(l._id))];
+    });
+    setTotalLogs(logsData.meta?.total ?? 0);
+  }, [logsData, logsPage, tab]);
+
+  const totalLogPages = logsData?.meta?.pages ?? 1;
+
+  // Infinite scroll: load the next page when the sentinel scrolls into view.
+  useEffect(() => {
+    if (tab !== "logs") return;
+    const el = logsSentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        if (visible && !logsFetching && logsPage < totalLogPages) {
+          setLogsPage((p) => p + 1);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tab, logsFetching, logsPage, totalLogPages]);
+
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useGetStatsQuery(undefined, { skip: tab !== "stats" });
+  const { data: tenantsData, isLoading: tenantsLoading, refetch: refetchTenants } = useGetAllTenantsQuery(undefined, { skip: tab !== "tenants" });
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useGetAllUsersQuery(undefined, { skip: tab !== "users" });
+  const { data: billingData, isLoading: billingLoading, refetch: refetchBilling } = useGetAllBillingQuery(undefined, { skip: tab !== "billing" });
+
+  const [toggleBanTenant] = useToggleBanTenantMutation();
+  const [changeTenantPlan] = useChangeTenantPlanMutation();
+
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API}/stats`, { headers });
-      const d = await r.json();
-      setStats(d.data);
-    } catch { showToast("Failed to fetch stats", "error"); }
-    setLoading(false);
-  };
-
-  const fetchTenants = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API}/tenants`, { headers });
-      const d = await r.json();
-      setTenants(d.data || []);
-    } catch { showToast("Failed to fetch tenants", "error"); }
-    setLoading(false);
-  };
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API}/users`, { headers });
-      const d = await r.json();
-      setUsers(d.data || []);
-    } catch { showToast("Failed to fetch users", "error"); }
-    setLoading(false);
-  };
-
-  const fetchBilling = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API}/billing`, { headers });
-      const d = await r.json();
-      setBilling(d.data?.records || []);
-      setBillingSummary(d.data?.summary || null);
-    } catch { showToast("Failed to fetch billing", "error"); }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    if (tab === "stats") fetchStats();
-    if (tab === "tenants") fetchTenants();
-    if (tab === "users") fetchUsers();
-    if (tab === "billing") fetchBilling();
+    if (tab === "stats") refetchStats();
+    if (tab === "tenants") refetchTenants();
+    if (tab === "users") refetchUsers();
+    if (tab === "billing") refetchBilling();
   }, [tab]);
+
+  const stats: Stats | null = (statsData?.data as Stats) ?? null;
+  const tenants: Tenant[] = (tenantsData?.data as Tenant[]) ?? [];
+  const users: User[] = (usersData?.data as User[]) ?? [];
+  const billing: BillingRecord[] = (billingData?.data?.records as BillingRecord[]) ?? [];
+  const billingSummary: BillingSummary | null = (billingData?.data?.summary as BillingSummary) ?? null;
+  const loading = statsLoading || tenantsLoading || usersLoading || billingLoading;
 
   const handleBanToggle = async (id: string) => {
     try {
-      const r = await fetch(`${API}/tenants/${id}/ban`, { method: "PUT", headers });
-      const d = await r.json();
+      const d = await toggleBanTenant(id).unwrap();
       showToast(d.message);
-      fetchTenants();
+      refetchTenants();
       setSelectedTenant(null);
     } catch { showToast("Failed to update ban status", "error"); }
   };
@@ -221,15 +294,10 @@ export default function SuperAdminDashboard() {
   const handlePlanChange = async () => {
     if (!planModal) return;
     try {
-      const r = await fetch(`${API}/tenants/${planModal.id}/plan`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({ plan: newPlan }),
-      });
-      const d = await r.json();
+      const d = await changeTenantPlan({ id: planModal.id, plan: newPlan }).unwrap();
       if (d.success) {
         showToast("Plan updated successfully");
-        fetchTenants();
+        refetchTenants();
         setPlanModal(null);
       } else showToast(d.message, "error");
     } catch { showToast("Failed to update plan", "error"); }
@@ -247,6 +315,7 @@ export default function SuperAdminDashboard() {
     { id: "tenants", label: "Tenants", icon: "⬡" },
     { id: "users", label: "Users", icon: "◎" },
     { id: "billing", label: "Billing", icon: "¢" },
+    { id: "logs", label: "Logs", icon: "≋" },
   ] as const;
   return (
     <div className="min-h-screen bg-[#080809] text-white" style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -502,6 +571,102 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── LOGS TAB ─────────────────────────────────────── */}
+        {!loading && tab === "logs" && (
+        <div className="space-y-5">
+          <div>
+            <h1 className="text-2xl font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>Activity Logs</h1>
+            <p className="text-zinc-600 text-sm mt-1">{totalLogs} events recorded</p>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <input
+              value={logsSearch}
+              onChange={(e) => setLogsSearch(e.target.value)}
+              placeholder="Search actor, action, resource, IP..."
+              className="bg-[#0f0f13] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500 w-full sm:w-72"
+            />
+            <select
+              value={logsAction}
+              onChange={(e) => setLogsAction(e.target.value)}
+              className="bg-[#0f0f13] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="">All Actions</option>
+              {(logsData?.meta?.actions ?? []).map((a: string) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            <select
+              value={logsStatus}
+              onChange={(e) => setLogsStatus(e.target.value)}
+              className="bg-[#0f0f13] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="SUCCESS">SUCCESS</option>
+              <option value="FAILURE">FAILURE</option>
+            </select>
+            {(logsSearch || logsAction || logsStatus) && (
+              <button
+                onClick={() => { setLogsSearch(""); setLogsAction(""); setLogsStatus(""); }}
+                className="text-xs px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-zinc-400 hover:text-white hover:border-white/20 transition-colors"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
+          {/* Scrollable feed (infinite scroll pagination) */}
+          <div className="max-h-[560px] overflow-y-auto rounded-2xl bg-[#0f0f13] border border-white/5 divide-y divide-white/5">
+            {logs.length === 0 && !logsFetching && (
+              <div className="text-center py-16 text-zinc-600">
+                {logsError ? "Failed to load logs" : "No activity logs found"}
+              </div>
+            )}
+
+            {logs.map((entry) => (
+              <div key={entry._id} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="text-zinc-600 text-xs whitespace-nowrap">{formatLogTime(entry.createdAt)}</span>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${logActionColors[entry.action] ?? "bg-zinc-800 text-zinc-300"}`}>
+                    {entry.action}
+                  </span>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                    entry.status === "SUCCESS" ? "bg-emerald-900/50 text-emerald-400" : "bg-red-900/50 text-red-400"
+                  }`}>
+                    {entry.status}
+                  </span>
+                  <span className="text-zinc-500 text-xs">{entry.resource}{entry.resourceId ? ` · ${entry.resourceId.slice(0, 12)}` : ""}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                  <span className="text-white font-medium">{entry.actorEmail}</span>
+                  <span className="text-zinc-600">{entry.actorRole}</span>
+                  {entry.tenantId && <span className="text-zinc-600">tenant: {entry.tenantId.slice(0, 12)}…</span>}
+                  <span className="text-zinc-600">IP: {entry.ipAddress || "—"}</span>
+                </div>
+                {entry.details && Object.keys(entry.details).length > 0 && (
+                  <pre className="mt-2 text-[11px] text-zinc-500 bg-black/30 border border-white/5 rounded-lg px-3 py-2 overflow-x-auto">
+                    {JSON.stringify(entry.details, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))}
+
+            {logsFetching && (
+              <div className="flex items-center justify-center py-6">
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {!logsFetching && logs.length > 0 && logsPage >= totalLogPages && (
+              <div className="text-center py-6 text-zinc-600 text-xs">End of logs</div>
+            )}
+
+            <div ref={logsSentinelRef} />
+          </div>
+        </div>
+      )}
       </div>
 
       {/* ── TENANT DETAIL MODAL ───────────────────────────── */}

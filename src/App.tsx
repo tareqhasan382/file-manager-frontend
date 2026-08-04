@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "./Redux/store";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-export const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
+import { useSubscribeMutation } from "./Redux/billingApi";
 const plans = [
   {
     name: "Free",
@@ -81,6 +81,7 @@ function App() {
   const navigate = useNavigate();
   const auth = useSelector((state: RootState) => state.auth);
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [subscribe] = useSubscribeMutation();
 
   const handleSubscribe = async (plan: string) => {
     if (!auth?.accessToken) {
@@ -90,15 +91,7 @@ function App() {
 
     setSubscribing(plan);
     try {
-      const res = await fetch(`${BASE_URL}/api/v1/billing/subscribe`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: auth.accessToken,
-        },
-        body: JSON.stringify({ plan: plan.toUpperCase() }),
-      });
-      const data = await res.json();
+      const data = await subscribe(plan.toUpperCase()).unwrap();
       if (!data.success) throw new Error(data.message);
 
       if (data.data?.url) {

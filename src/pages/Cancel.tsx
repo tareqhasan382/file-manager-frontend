@@ -107,10 +107,10 @@ const Cancel = () => {
             animation: visible ? "slideUp 0.5s ease 0.5s forwards" : "none",
           }}
         >
-          <Link
-            to="/billing"
-            className="block w-full py-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:opacity-90 text-white font-bold rounded-2xl text-sm transition-opacity"
-          >
+            <Link
+              to="/billing-history"
+              className="block w-full py-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:opacity-90 text-white font-bold rounded-2xl text-sm transition-opacity"
+            >
             {"Try Again →"}
           </Link>
           <Link

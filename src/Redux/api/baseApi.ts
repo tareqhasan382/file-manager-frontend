@@ -5,12 +5,11 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
-import { BASE_URL } from "../../App";
+import { BASE_URL } from "../../config";
 import { userLoggedOut } from "../authSlice";
-export const BASEURL = BASE_URL;
 
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: BASEURL,
+  baseUrl: `${BASE_URL.replace(/\/$/, "")}/api/v1`,
   prepareHeaders: (headers) => {
     const authString = localStorage.getItem("file_vault");
     const auth = authString ? JSON.parse(authString) : null;
@@ -45,7 +44,7 @@ export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithAuth,
   endpoints: () => ({}),
-  tagTypes: ["files", "folders"],
+  tagTypes: ["files", "folders", "members"],
 });
 
 export default baseApi;
