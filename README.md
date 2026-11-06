@@ -5,17 +5,10 @@ A production-ready SaaS platform for secure, team-based file storage with role-b
  <br/>
 
 🔗 **Live Demo:** [https://file-manager-frontend-lyart.vercel.app/](https://file-manager-frontend-lyart.vercel.app/)
- 
-### Credentials
-```angular2html
-Super Admin
-Email: superadmin@filevault.com
-Password: SuperSecret123@
 
-Owner
-Email: tareqhasan382@gmail.com
-Password: 12345678
-```
+> **Security:** This repository must never contain real credentials. Do not commit
+> account passwords, API keys, or secret values to the README, source, or `.env`
+> files that are tracked by Git.
 ---
 
 ## Table of Contents
