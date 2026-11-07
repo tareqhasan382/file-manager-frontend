@@ -4,7 +4,7 @@ import type { RootState } from "./Redux/store";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useSubscribeMutation } from "./Redux/billingApi";
-const plans = [
+const plans = [  
   {
     name: "Free",
     price: "$0",
